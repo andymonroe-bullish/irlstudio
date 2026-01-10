@@ -6,6 +6,7 @@ import { useEvents, Event } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InviteCollaboratorDialog } from "@/components/InviteCollaboratorDialog";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -209,6 +210,7 @@ const EventsList = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <InviteCollaboratorDialog events={events} />
             <Button
               onClick={() => navigate("/create-event")}
               className="gap-2"
