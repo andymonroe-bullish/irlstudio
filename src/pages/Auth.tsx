@@ -72,7 +72,7 @@ const Auth = () => {
           </h1>
           <p className="text-muted-foreground mt-2">
             {isLogin
-              ? "Sign in to continue planning your events"
+              ? "sign in to keep building your irl events :)"
               : "Start planning amazing events today"}
           </p>
         </div>
