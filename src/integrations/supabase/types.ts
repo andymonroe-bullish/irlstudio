@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_items: {
+        Row: {
+          actual_cost: number
+          category: string
+          created_at: string
+          due_date: string | null
+          estimated_cost: number
+          event_id: string
+          id: string
+          name: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          estimated_cost?: number
+          event_id: string
+          id?: string
+          name: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          estimated_cost?: number
+          event_id?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          budget: number
+          created_at: string
+          end_date: string | null
+          event_type: string
+          id: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget: number
+          created_at?: string
+          end_date?: string | null
+          event_type: string
+          id?: string
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -40,6 +123,94 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      revenue_streams: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          price: number
+          projected_volume: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          price?: number
+          projected_volume?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          price?: number
+          projected_volume?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_streams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assignee: string | null
+          created_at: string
+          due_date: string | null
+          event_id: string
+          id: string
+          phase_id: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          created_at?: string
+          due_date?: string | null
+          event_id: string
+          id?: string
+          phase_id: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          created_at?: string
+          due_date?: string | null
+          event_id?: string
+          id?: string
+          phase_id?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
