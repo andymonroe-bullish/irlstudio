@@ -6,11 +6,13 @@ import { Event } from "./useEvents";
 
 export interface Invitation {
   id: string;
-  invited_email: string;
+  email: string;
   event_id: string;
   invited_by: string;
   status: string;
   created_at: string;
+  token: string;
+  expires_at: string;
   event?: Event;
 }
 
@@ -28,7 +30,7 @@ export const useInvitations = () => {
       const { data: invitations, error: fetchError } = await supabase
         .from("event_invitations")
         .select("*")
-        .eq("invited_email", user.email.toLowerCase())
+        .eq("email", user.email.toLowerCase())
         .eq("status", "pending");
 
       if (fetchError) throw fetchError;
@@ -64,7 +66,7 @@ export const useInvitations = () => {
           description: `You now have access to ${invitations.length} event${invitations.length > 1 ? "s" : ""} you were invited to.`,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error processing invitations:", error);
     }
   }, [user, toast]);
@@ -90,18 +92,10 @@ export const useInvitations = () => {
         return false;
       }
 
-      // Check if email already has a user account
-      const { data: existingUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", normalizedEmail)
-        .single();
-
       const invitationsToCreate = eventIds.map((eventId) => ({
         event_id: eventId,
-        invited_email: normalizedEmail,
+        email: normalizedEmail,
         invited_by: user.id,
-        status: "pending",
       }));
 
       // Create invitations
@@ -122,47 +116,17 @@ export const useInvitations = () => {
         throw inviteError;
       }
 
-      // If user already exists, immediately add them as collaborator
-      if (existingUser) {
-        for (const eventId of eventIds) {
-          const { data: existing } = await supabase
-            .from("event_collaborators")
-            .select("id")
-            .eq("event_id", eventId)
-            .eq("user_id", existingUser.id)
-            .single();
-
-          if (!existing) {
-            await supabase.from("event_collaborators").insert({
-              event_id: eventId,
-              user_id: existingUser.id,
-            });
-          }
-
-          // Mark as accepted
-          await supabase
-            .from("event_invitations")
-            .update({ status: "accepted" })
-            .eq("event_id", eventId)
-            .eq("invited_email", normalizedEmail);
-        }
-
-        toast({
-          title: "Collaborator added!",
-          description: `${normalizedEmail} now has access to the selected event${eventIds.length > 1 ? "s" : ""}.`,
-        });
-      } else {
-        toast({
-          title: "Invitation created!",
-          description: `When ${normalizedEmail} signs up, they'll automatically have access to the selected event${eventIds.length > 1 ? "s" : ""}.`,
-        });
-      }
+      toast({
+        title: "Invitation created!",
+        description: `When ${normalizedEmail} signs up, they'll automatically have access to the selected event${eventIds.length > 1 ? "s" : ""}.`,
+      });
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error sending invitation",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -177,14 +141,27 @@ export const useInvitations = () => {
         .from("event_invitations")
         .select(`
           *,
-          events (*)
+          event:events (*)
         `)
         .eq("invited_by", user.id)
         .eq("status", "pending");
 
       if (error) throw error;
-      setPendingInvitations(data || []);
-    } catch (error: any) {
+
+      const mappedData = (data || []).map(item => ({
+        id: item.id,
+        email: item.email,
+        event_id: item.event_id,
+        invited_by: item.invited_by,
+        status: item.status,
+        created_at: item.created_at,
+        token: item.token,
+        expires_at: item.expires_at,
+        event: item.event as Event | undefined
+      }));
+
+      setPendingInvitations(mappedData);
+    } catch (error: unknown) {
       console.error("Error fetching invitations:", error);
     }
   };
@@ -203,10 +180,11 @@ export const useInvitations = () => {
       toast({
         title: "Invitation cancelled",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error cancelling invitation",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
