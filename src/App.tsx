@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
+import EventsList from "./pages/EventsList";
+import CreateEvent from "./pages/CreateEvent";
+import EventDetail from "./pages/EventDetail";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -24,7 +26,23 @@ const App = () => (
               path="/"
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <EventsList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-event"
+              element={
+                <ProtectedRoute>
+                  <CreateEvent />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/event/:eventId"
+              element={
+                <ProtectedRoute>
+                  <EventDetail />
                 </ProtectedRoute>
               }
             />
