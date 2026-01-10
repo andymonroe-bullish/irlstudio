@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { DateRange } from "react-day-picker";
-import { ListTodo, DollarSign } from "lucide-react";
+import { ListTodo, DollarSign, TrendingUp } from "lucide-react";
 import EventHeader from "./EventHeader";
 import TaskRoadmap from "./TaskRoadmap";
 import BudgetManager from "./BudgetManager";
+import ProjectionsManager from "./ProjectionsManager";
 
 interface EventDashboardProps {
   eventData: {
@@ -14,7 +15,7 @@ interface EventDashboardProps {
   };
 }
 
-type DashboardView = "tasks" | "budget";
+type DashboardView = "tasks" | "budget" | "projections";
 
 const EventDashboard = ({ eventData }: EventDashboardProps) => {
   const [activeView, setActiveView] = useState<DashboardView>("tasks");
@@ -23,6 +24,7 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
   const tabs = [
     { id: "tasks" as DashboardView, label: "Tasks", icon: ListTodo },
     { id: "budget" as DashboardView, label: "Budget", icon: DollarSign },
+    { id: "projections" as DashboardView, label: "Projections", icon: TrendingUp },
   ];
 
   return (
@@ -63,11 +65,9 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
         {/* Dashboard Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
-            {activeView === "tasks" ? (
-              <TaskRoadmap />
-            ) : (
-              <BudgetManager totalBudget={budgetNumber} />
-            )}
+            {activeView === "tasks" && <TaskRoadmap />}
+            {activeView === "budget" && <BudgetManager totalBudget={budgetNumber} />}
+            {activeView === "projections" && <ProjectionsManager totalBudget={budgetNumber} />}
           </div>
 
           <div className="space-y-6">
