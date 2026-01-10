@@ -9,6 +9,7 @@ export interface Event {
   id: string;
   user_id: string;
   event_type: string;
+  name: string | null;
   budget: number;
   start_date: string;
   end_date: string | null;
@@ -208,11 +209,36 @@ export const useEvents = () => {
     }
   };
 
+  const updateEventName = async (eventId: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ name })
+        .eq("id", eventId);
+
+      if (error) throw error;
+      
+      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, name } : e));
+      
+      toast({
+        title: "Event renamed",
+        description: "Your event has been renamed successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error renaming event",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     events,
     loading,
     createEvent,
     deleteEvent,
+    updateEventName,
     refetch: fetchEvents,
   };
 };

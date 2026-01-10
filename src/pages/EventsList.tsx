@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Calendar, DollarSign, Trash2, LogOut } from "lucide-react";
+import { Plus, Calendar, DollarSign, Trash2, LogOut, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEvents, Event } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -17,8 +19,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const EventCard = ({ event, onDelete }: { event: Event; onDelete: (id: string) => void }) => {
+const EventCard = ({ 
+  event, 
+  onDelete,
+  onUpdateName 
+}: { 
+  event: Event; 
+  onDelete: (id: string) => void;
+  onUpdateName: (id: string, name: string) => void;
+}) => {
   const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(event.name || "");
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -37,21 +49,80 @@ const EventCard = ({ event, onDelete }: { event: Event; onDelete: (id: string) =
     networking: "Networking",
   };
 
+  const displayName = event.name || `${eventTypeLabels[event.event_type] || event.event_type} Event`;
+
+  const handleSaveName = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (editName.trim()) {
+      onUpdateName(event.id, editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditName(event.name || "");
+    setIsEditing(false);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-card rounded-2xl border border-border p-6 shadow-card hover:shadow-lg transition-all cursor-pointer group"
-      onClick={() => navigate(`/event/${event.id}`)}
+      onClick={() => !isEditing && navigate(`/event/${event.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
-        <div>
+        <div className="flex-1 min-w-0">
           <span className="text-xs font-medium text-primary uppercase tracking-wider">
             {eventTypeLabels[event.event_type] || event.event_type}
           </span>
-          <h3 className="text-xl font-semibold text-foreground mt-1">
-            {eventTypeLabels[event.event_type] || event.event_type} Event
-          </h3>
+          {isEditing ? (
+            <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+              <Input
+                autoFocus
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSaveName(e as any);
+                  }
+                  if (e.key === "Escape") {
+                    handleCancelEdit(e as any);
+                  }
+                }}
+                className="h-8 text-lg font-semibold"
+              />
+              <button
+                onClick={handleSaveName}
+                className="p-1 rounded hover:bg-primary/10 text-primary"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="p-1 rounded hover:bg-muted text-muted-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mt-1">
+              <h3 className="text-xl font-semibold text-foreground truncate">
+                {displayName}
+              </h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditName(displayName);
+                  setIsEditing(true);
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-foreground rounded"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -110,7 +181,7 @@ const EventCard = ({ event, onDelete }: { event: Event; onDelete: (id: string) =
 
 const EventsList = () => {
   const navigate = useNavigate();
-  const { events, loading, deleteEvent } = useEvents();
+  const { events, loading, deleteEvent, updateEventName } = useEvents();
   const { user, signOut } = useAuth();
 
   const handleLogout = async () => {
@@ -178,7 +249,12 @@ const EventsList = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <EventCard key={event.id} event={event} onDelete={deleteEvent} />
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                onDelete={deleteEvent} 
+                onUpdateName={updateEventName}
+              />
             ))}
           </div>
         )}

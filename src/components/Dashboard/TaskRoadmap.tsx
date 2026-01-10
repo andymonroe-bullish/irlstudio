@@ -131,22 +131,36 @@ const TaskRoadmap = ({ initialPhases }: TaskRoadmapProps) => {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="space-y-3">
-          {phases.map((phase) => (
-            <PhaseSection
-              key={phase.id}
-              phase={phase}
-              isExpanded={expandedPhases.includes(phase.id)}
-              onToggle={() => togglePhase(phase.id)}
-              onStatusChange={(taskId, status) =>
-                handleStatusChange(phase.id, taskId, status)
-              }
-              onAssigneeChange={(taskId, assignee) =>
-                handleAssigneeChange(phase.id, taskId, assignee)
-              }
-              onDeleteTask={(taskId) => handleDeleteTask(phase.id, taskId)}
-              onAddTask={(title) => handleAddTask(phase.id, title)}
-            />
-          ))}
+          {phases.map((phase) => {
+            // Convert local tasks to TaskData format for compatibility
+            const tasksData = phase.tasks.map(t => ({
+              id: t.id,
+              event_id: "",
+              phase_id: phase.id,
+              title: t.title,
+              status: t.status,
+              assignee: t.assignee || null,
+              due_date: t.dueDate || null,
+              sort_order: 0,
+            }));
+            return (
+              <PhaseSection
+                key={phase.id}
+                phase={phase}
+                tasksData={tasksData}
+                isExpanded={expandedPhases.includes(phase.id)}
+                onToggle={() => togglePhase(phase.id)}
+                onStatusChange={(taskId, status) =>
+                  handleStatusChange(phase.id, taskId, status)
+                }
+                onAssigneeChange={(taskId, assignee) =>
+                  handleAssigneeChange(phase.id, taskId, assignee)
+                }
+                onDeleteTask={(taskId) => handleDeleteTask(phase.id, taskId)}
+                onAddTask={(title) => handleAddTask(phase.id, title)}
+              />
+            );
+          })}
         </div>
       </DragDropContext>
     </div>

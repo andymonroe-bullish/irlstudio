@@ -69,7 +69,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
 
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
+        <div className={activeView === "tasks" ? "lg:col-span-3" : "lg:col-span-4"}>
           {activeView === "tasks" && (
             <TaskRoadmapPersisted
               tasks={eventData.tasks}
@@ -100,24 +100,26 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
           )}
         </div>
 
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card rounded-2xl border border-border p-6 shadow-card"
-          >
-            <h3 className="font-semibold text-foreground mb-4">Countdown</h3>
-            <div className="text-center py-4">
-              <span className="text-4xl font-bold text-primary">
-                {daysUntilEvent}
-              </span>
-              <p className="text-sm text-muted-foreground mt-2">
-                Days until your event
-              </p>
-            </div>
-          </motion.div>
-        </div>
+        {activeView === "tasks" && (
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-card rounded-2xl border border-border p-6 shadow-card"
+            >
+              <h3 className="font-semibold text-foreground mb-4">Countdown</h3>
+              <div className="text-center py-4">
+                <span className="text-4xl font-bold text-primary">
+                  {daysUntilEvent}
+                </span>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Days until your event
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
