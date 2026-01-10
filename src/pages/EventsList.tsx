@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Calendar, DollarSign, Trash2, LogOut, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InviteCollaboratorDialog } from "@/components/InviteCollaboratorDialog";
+import { PendingInvitationsBanner } from "@/components/PendingInvitationsBanner";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -182,8 +183,13 @@ const EventCard = ({
 
 const EventsList = () => {
   const navigate = useNavigate();
-  const { events, loading, deleteEvent, updateEventName } = useEvents();
+  const { events, loading, deleteEvent, updateEventName, refetch } = useEvents();
   const { user, signOut } = useAuth();
+
+  const handleInvitationAccepted = useCallback(() => {
+    // Refresh events list when an invitation is accepted
+    refetch();
+  }, [refetch]);
 
   const handleLogout = async () => {
     await signOut();
@@ -224,6 +230,9 @@ const EventsList = () => {
             </Button>
           </div>
         </div>
+
+        {/* Pending Invitations Banner */}
+        <PendingInvitationsBanner onAccepted={handleInvitationAccepted} />
 
         {/* Events Grid or Empty State */}
         {events.length === 0 ? (
