@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
-import { Calendar, DollarSign, Tag, Settings } from "lucide-react";
+import { Calendar, DollarSign, Tag, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateRange } from "react-day-picker";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface EventHeaderProps {
   eventType: string;
@@ -18,6 +20,14 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 const EventHeader = ({ eventType, budget, dateRange }: EventHeaderProps) => {
+  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   const formatDateRange = () => {
     if (!dateRange.from) return "";
     const from = dateRange.from.toLocaleDateString("en-US", {
@@ -50,9 +60,23 @@ const EventHeader = ({ eventType, budget, dateRange }: EventHeaderProps) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {user && (
+            <span className="text-sm text-muted-foreground hidden md:block">
+              {user.email}
+            </span>
+          )}
           <Button variant="outline" size="sm" className="rounded-xl">
             <Settings className="w-4 h-4 mr-2" />
             Settings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="rounded-xl text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
           </Button>
         </div>
       </div>
