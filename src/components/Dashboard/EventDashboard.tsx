@@ -3,6 +3,7 @@ import { DateRange } from "react-day-picker";
 import EventHeader from "./EventHeader";
 import QuickStats from "./QuickStats";
 import TaskRoadmap from "./TaskRoadmap";
+import BudgetManager from "./BudgetManager";
 
 interface EventDashboardProps {
   eventData: {
@@ -13,12 +14,14 @@ interface EventDashboardProps {
 }
 
 const EventDashboard = ({ eventData }: EventDashboardProps) => {
+  const budgetNumber = parseInt(eventData.budget.replace(/[^0-9]/g, "")) || 50000;
+
   return (
     <div className="min-h-screen bg-background">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-6xl mx-auto p-6"
+        className="max-w-7xl mx-auto p-6"
       >
         <EventHeader
           eventType={eventData.eventType}
@@ -28,7 +31,7 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
 
         <QuickStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
             <TaskRoadmap />
           </div>
@@ -49,7 +52,7 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
                   "Add vendor contact",
                   "Upload document",
                   "Set reminder",
-                ].map((action, i) => (
+                ].map((action) => (
                   <button
                     key={action}
                     className="w-full text-left px-4 py-3 rounded-xl text-sm text-foreground hover:bg-accent transition-colors"
@@ -70,7 +73,17 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
                 Countdown
               </h3>
               <div className="text-center py-4">
-                <span className="text-4xl font-bold text-primary">--</span>
+                <span className="text-4xl font-bold text-primary">
+                  {eventData.dateRange?.from
+                    ? Math.max(
+                        0,
+                        Math.ceil(
+                          (eventData.dateRange.from.getTime() - Date.now()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      )
+                    : "--"}
+                </span>
                 <p className="text-sm text-muted-foreground mt-2">
                   Days until your event
                 </p>
@@ -78,6 +91,9 @@ const EventDashboard = ({ eventData }: EventDashboardProps) => {
             </motion.div>
           </div>
         </div>
+
+        {/* Budget Section - Full Width */}
+        <BudgetManager totalBudget={budgetNumber} />
       </motion.div>
     </div>
   );
