@@ -153,6 +153,7 @@ const TaskRoadmapPersisted = ({
             <PhaseSection
               key={phase.id}
               phase={phase}
+              tasksData={tasks}
               isExpanded={expandedPhases.includes(phase.id)}
               onToggle={() => togglePhase(phase.id)}
               onStatusChange={(taskId, status) =>

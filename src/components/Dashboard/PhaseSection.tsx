@@ -6,9 +6,11 @@ import { Phase, Task, TaskStatus } from "./types";
 import TaskItem from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Task as TaskData } from "@/hooks/useEvents";
 
 interface PhaseSectionProps {
   phase: Phase;
+  tasksData: TaskData[];
   isExpanded: boolean;
   onToggle: () => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
@@ -19,6 +21,7 @@ interface PhaseSectionProps {
 
 const PhaseSection = ({
   phase,
+  tasksData,
   isExpanded,
   onToggle,
   onStatusChange,
@@ -101,17 +104,21 @@ const PhaseSection = ({
                     snapshot.isDraggingOver ? "bg-accent/30 rounded-lg" : ""
                   }`}
                 >
-                  {phase.tasks.map((task, index) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      index={index}
-                      phaseColor={phase.color}
-                      onStatusChange={onStatusChange}
-                      onAssigneeChange={onAssigneeChange}
-                      onDelete={onDeleteTask}
-                    />
-                  ))}
+                  {phase.tasks.map((task, index) => {
+                    const taskData = tasksData.find(t => t.id === task.id);
+                    return taskData ? (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        taskData={taskData}
+                        index={index}
+                        phaseColor={phase.color}
+                        onStatusChange={onStatusChange}
+                        onAssigneeChange={onAssigneeChange}
+                        onDelete={onDeleteTask}
+                      />
+                    ) : null;
+                  })}
                   {provided.placeholder}
 
                   {isAddingTask ? (
