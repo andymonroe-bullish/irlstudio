@@ -1,14 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { DateRange } from "react-day-picker";
+import EventWizard from "@/components/EventWizard/EventWizard";
+import EventDashboard from "@/components/Dashboard/EventDashboard";
+
+interface EventData {
+  eventType: string;
+  budget: string;
+  dateRange: DateRange;
+}
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const [eventData, setEventData] = useState<EventData | null>(null);
+
+  const handleWizardComplete = (data: EventData) => {
+    setEventData(data);
+  };
+
+  if (eventData) {
+    return <EventDashboard eventData={eventData} />;
+  }
+
+  return <EventWizard onComplete={handleWizardComplete} />;
 };
 
 export default Index;
