@@ -103,7 +103,10 @@ const TaskItem = ({
                   {Object.entries(statusConfig).map(([key, config]) => (
                     <DropdownMenuItem
                       key={key}
-                      onClick={() => onStatusChange(task.id, key as TaskStatus)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(task.id, key as TaskStatus);
+                      }}
                       className="gap-2"
                     >
                       <config.icon className="w-4 h-4" />
@@ -142,14 +145,14 @@ const TaskItem = ({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card border-border">
-                  <DropdownMenuItem onClick={() => onAssigneeChange(task.id, "")}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAssigneeChange(task.id, ""); }}>
                     <User className="w-4 h-4 mr-2 text-muted-foreground" />
                     Unassigned
                   </DropdownMenuItem>
                   {teamMembers.map((member) => (
                     <DropdownMenuItem
                       key={member}
-                      onClick={() => onAssigneeChange(task.id, member)}
+                      onClick={(e) => { e.stopPropagation(); onAssigneeChange(task.id, member); }}
                     >
                       <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium mr-2">
                         {member.charAt(0)}
@@ -179,7 +182,10 @@ const TaskItem = ({
                   {Object.entries(statusConfig).map(([key, config]) => (
                     <DropdownMenuItem
                       key={key}
-                      onClick={() => onStatusChange(task.id, key as TaskStatus)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(task.id, key as TaskStatus);
+                      }}
                       className="gap-2"
                     >
                       <span className={cn("px-2 py-0.5 rounded text-xs", config.className)}>
