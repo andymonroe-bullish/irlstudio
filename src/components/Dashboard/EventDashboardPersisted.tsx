@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ListTodo, DollarSign, TrendingUp } from "lucide-react";
+import { ListTodo, DollarSign, TrendingUp, Calendar } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
 import BudgetManagerPersisted from "./BudgetManagerPersisted";
 import ProjectionsManagerPersisted from "./ProjectionsManagerPersisted";
+import ItineraryManager from "./ItineraryManager";
 
 interface EventDashboardPersistedProps {
   event: Event;
 }
 
-type DashboardView = "tasks" | "budget" | "projections";
+type DashboardView = "tasks" | "budget" | "projections" | "itinerary";
 
 const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
   const [activeView, setActiveView] = useState<DashboardView>("tasks");
@@ -21,6 +22,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
     { id: "tasks" as DashboardView, label: "Tasks", icon: ListTodo },
     { id: "budget" as DashboardView, label: "Budget", icon: DollarSign },
     { id: "projections" as DashboardView, label: "Projections", icon: TrendingUp },
+    { id: "itinerary" as DashboardView, label: "Itinerary", icon: Calendar },
   ];
 
   const daysUntilEvent = Math.max(
@@ -96,6 +98,12 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
               onUpdateStream={eventData.updateRevenueStream}
               onAddStream={eventData.addRevenueStream}
               onDeleteStream={eventData.deleteRevenueStream}
+            />
+          )}
+          {activeView === "itinerary" && (
+            <ItineraryManager
+              eventId={event.id}
+              eventStartDate={event.start_date}
             />
           )}
         </div>

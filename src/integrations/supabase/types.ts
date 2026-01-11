@@ -173,6 +173,56 @@ export type Database = {
         }
         Relationships: []
       }
+      itinerary_sessions: {
+        Row: {
+          created_at: string
+          day_number: number
+          description: string | null
+          end_time: string
+          event_id: string
+          id: string
+          location: string | null
+          sort_order: number
+          start_time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_number?: number
+          description?: string | null
+          end_time: string
+          event_id: string
+          id?: string
+          location?: string | null
+          sort_order?: number
+          start_time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          description?: string | null
+          end_time?: string
+          event_id?: string
+          id?: string
+          location?: string | null
+          sort_order?: number
+          start_time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
