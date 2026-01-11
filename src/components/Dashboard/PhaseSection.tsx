@@ -56,23 +56,24 @@ const PhaseSection = ({
     <div className="overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary/50 transition-colors group"
+        className="w-full flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-secondary/50 transition-colors group"
       >
         <motion.div
           animate={{ rotate: isExpanded ? 90 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
         </motion.div>
 
-        <div className={`px-3 py-1 rounded-lg text-xs font-semibold text-white ${phase.color}`}>
-          {phase.name}
+        <div className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-semibold text-white ${phase.color} truncate max-w-[150px] sm:max-w-none`}>
+          <span className="hidden sm:inline">{phase.name}</span>
+          <span className="sm:hidden">{phase.name.replace('Phase ', 'P').replace(' - ', ': ')}</span>
         </div>
 
-        <span className="text-sm text-muted-foreground">{phase.tasks.length}</span>
+        <span className="text-xs sm:text-sm text-muted-foreground">{phase.tasks.length}</span>
 
-        <div className="flex-1 flex items-center gap-3">
-          <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="flex-1 flex items-center gap-2 sm:gap-3">
+          <div className="w-16 sm:w-24 h-1.5 bg-muted rounded-full overflow-hidden">
             <motion.div
               className={`h-full ${phase.color} rounded-full`}
               initial={{ width: 0 }}
@@ -80,8 +81,8 @@ const PhaseSection = ({
               transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>
-          <span className="text-sm text-muted-foreground">
-            {completedCount}/{phase.tasks.length} Tasks
+          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+            {completedCount}/{phase.tasks.length}
           </span>
         </div>
       </button>
@@ -100,7 +101,7 @@ const PhaseSection = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`pl-12 pr-4 pb-4 space-y-1 min-h-[50px] transition-colors ${
+                  className={`pl-4 sm:pl-12 pr-2 sm:pr-4 pb-4 space-y-1 min-h-[50px] transition-colors ${
                     snapshot.isDraggingOver ? "bg-accent/30 rounded-lg" : ""
                   }`}
                 >

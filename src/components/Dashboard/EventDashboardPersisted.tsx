@@ -48,14 +48,14 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
       <EventHeaderPersisted event={event} />
 
       {/* Toggle Tabs */}
-      <div className="flex items-center justify-center mb-8">
-        <div className="inline-flex items-center bg-muted/50 rounded-full p-1.5 border border-border">
+      <div className="flex items-center justify-center mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="inline-flex items-center bg-muted/50 rounded-full p-1 sm:p-1.5 border border-border flex-shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveView(tab.id)}
               className={`
-                flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200
+                flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap
                 ${activeView === tab.id
                   ? "bg-card text-foreground shadow-sm border border-border"
                   : "text-muted-foreground hover:text-foreground"
@@ -63,7 +63,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
               `}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="hidden xs:inline sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>

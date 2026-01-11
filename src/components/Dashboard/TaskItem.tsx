@@ -72,7 +72,7 @@ const TaskItem = ({
           >
             <div
               className={cn(
-                "flex items-center gap-3 p-3 rounded-lg transition-all",
+                "flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all",
                 "hover:bg-secondary/30 cursor-pointer"
               )}
               onClick={() => setDetailModalOpen(true)}
@@ -83,7 +83,7 @@ const TaskItem = ({
                   <button
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0",
                       task.status === "completed"
                         ? "bg-primary border-primary"
                         : task.status === "in_progress"
@@ -116,7 +116,7 @@ const TaskItem = ({
               {/* Title */}
               <span
                 className={cn(
-                  "flex-1 text-sm transition-colors",
+                  "flex-1 text-sm transition-colors truncate min-w-0",
                   task.status === "completed"
                     ? "text-muted-foreground line-through"
                     : "text-foreground"
@@ -125,12 +125,12 @@ const TaskItem = ({
                 {task.title}
               </span>
 
-              {/* Assignee */}
+              {/* Assignee - Hidden on mobile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-secondary transition-colors"
+                    className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md hover:bg-secondary transition-colors"
                   >
                     {task.assignee ? (
                       <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
@@ -160,18 +160,19 @@ const TaskItem = ({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Status Badge */}
+              {/* Status Badge - Smaller on mobile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1",
+                      "px-1.5 sm:px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 flex-shrink-0",
                       status.className
                     )}
                   >
-                    {status.label}
-                    <ChevronDown className="w-3 h-3" />
+                    <span className="hidden sm:inline">{status.label}</span>
+                    <StatusIcon className="w-3 h-3 sm:hidden" />
+                    <ChevronDown className="w-3 h-3 hidden sm:block" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card border-border">
@@ -200,13 +201,13 @@ const TaskItem = ({
                 <MoreHorizontal className="w-4 h-4" />
               </button>
 
-              {/* Delete */}
+              {/* Delete - Hidden on mobile, accessible via detail modal */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(task.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
+                className="hidden sm:block opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

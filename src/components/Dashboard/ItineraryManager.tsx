@@ -134,22 +134,22 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-4 sm:space-y-6"
     >
       {/* Header */}
-      <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-        <h2 className="text-2xl font-bold text-foreground mb-1">Event Itinerary</h2>
+      <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 shadow-card">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Event Itinerary</h2>
         <p className="text-muted-foreground text-sm">Plan the run of show, session by session.</p>
       </div>
 
       {/* Day Selector */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {availableDays.map((day) => (
           <button
             key={day}
             onClick={() => setSelectedDay(day)}
             className={`
-              flex flex-col items-center px-4 py-3 rounded-xl transition-all duration-200 border
+              flex flex-col items-center px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-200 border flex-shrink-0
               ${selectedDay === day
                 ? "bg-primary text-primary-foreground border-primary shadow-md"
                 : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
@@ -157,26 +157,26 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
             `}
           >
             <span className="text-xs font-semibold uppercase">Day {day}</span>
-            <span className="text-sm font-medium">{getDayDate(day)}</span>
+            <span className="text-xs sm:text-sm font-medium">{getDayDate(day)}</span>
           </button>
         ))}
         <button
           onClick={handleAddDay}
-          className="flex items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all duration-200"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all duration-200 flex-shrink-0"
         >
           <CalendarPlus className="w-4 h-4" />
         </button>
       </div>
 
       {/* Sessions Timeline */}
-      <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+      <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 shadow-card">
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedDay}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-4"
           >
             {sessionsForDay.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -190,28 +190,29 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex gap-4"
+                  className="flex flex-col sm:flex-row gap-2 sm:gap-4"
                 >
                   {/* Time Column */}
-                  <div className="w-16 flex-shrink-0 text-right">
+                  <div className="flex sm:flex-col sm:w-16 gap-2 sm:gap-0 sm:text-right flex-shrink-0">
                     <div className="text-sm font-semibold text-foreground">
                       {formatTime(session.start_time)}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground sm:hidden">-</span>
+                    <div className="text-xs sm:text-xs text-muted-foreground">
                       {formatTime(session.end_time)}
                     </div>
                   </div>
 
                   {/* Session Card */}
-                  <div className="flex-1 group relative bg-muted/30 hover:bg-muted/50 rounded-xl p-4 border border-border transition-all duration-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground">{session.title}</h4>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                  <div className="flex-1 group relative bg-muted/30 hover:bg-muted/50 rounded-xl p-3 sm:p-4 border border-border transition-all duration-200">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground truncate">{session.title}</h4>
+                        <div className="flex items-center gap-3 sm:gap-4 mt-1 text-xs sm:text-sm text-muted-foreground flex-wrap">
                           {session.location && (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
-                              {session.location}
+                              <span className="truncate max-w-[100px] sm:max-w-none">{session.location}</span>
                             </span>
                           )}
                           <span className="flex items-center gap-1">
@@ -220,14 +221,14 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
                           </span>
                         </div>
                         {session.description && (
-                          <p className="text-sm text-muted-foreground mt-2">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
                             {session.description}
                           </p>
                         )}
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -246,7 +247,7 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
                         </Button>
                       </div>
                       
-                      <ChevronRight className="w-5 h-5 text-muted-foreground/50 ml-2" />
+                      <ChevronRight className="w-5 h-5 text-muted-foreground/50 hidden sm:block" />
                     </div>
                   </div>
                 </motion.div>
