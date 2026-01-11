@@ -50,15 +50,17 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
+        <div className="mb-4 sm:mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+            className="gap-2 text-muted-foreground hover:text-foreground -ml-2"
+            size="sm"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Events
+            <span className="hidden sm:inline">Back to Events</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
         

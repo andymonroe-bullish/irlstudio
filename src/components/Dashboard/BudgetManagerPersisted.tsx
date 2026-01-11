@@ -119,52 +119,52 @@ const BudgetManagerPersisted = ({
       className="bg-card rounded-2xl border border-border shadow-card"
     >
       {/* Summary Header */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 sm:p-6 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-foreground">Expense Items</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Expense Items</h2>
             <p className="text-muted-foreground text-sm mt-1">
               Line items and estimates
             </p>
           </div>
-          <Button onClick={() => setIsAddingItem(true)} className="gap-2">
+          <Button onClick={() => setIsAddingItem(true)} className="gap-2 w-full sm:w-auto">
             <Plus className="w-4 h-4" />
             Add Expense
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-secondary/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-              <DollarSign className="w-4 h-4" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-secondary/30 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm mb-1">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
               Total Budget
             </div>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-lg sm:text-2xl font-bold text-foreground">
               {formatCurrency(totalBudget)}
             </span>
           </div>
-          <div className="bg-secondary/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-              <TrendingUp className="w-4 h-4" />
+          <div className="bg-secondary/30 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm mb-1">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
               Estimated
             </div>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-lg sm:text-2xl font-bold text-foreground">
               {formatCurrency(totalEstimated)}
             </span>
           </div>
-          <div className="bg-secondary/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-              <TrendingDown className="w-4 h-4" />
+          <div className="bg-secondary/30 rounded-xl p-3 sm:p-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm mb-1">
+              <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />
               Actual Spent
             </div>
-            <span className="text-2xl font-bold text-green-600">
+            <span className="text-lg sm:text-2xl font-bold text-green-600">
               {formatCurrency(totalActual)}
             </span>
           </div>
-          <div className="bg-secondary/30 rounded-xl p-4">
-            <div className="text-muted-foreground text-sm mb-1">Remaining</div>
+          <div className="bg-secondary/30 rounded-xl p-3 sm:p-4">
+            <div className="text-muted-foreground text-xs sm:text-sm mb-1">Remaining</div>
             <span
-              className={`text-2xl font-bold ${
+              className={`text-lg sm:text-2xl font-bold ${
                 remaining >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
@@ -174,8 +174,8 @@ const BudgetManagerPersisted = ({
         </div>
       </div>
 
-      {/* Table Header */}
-      <div className="grid grid-cols-[1fr,120px,100px,80px,100px,40px] gap-4 items-center py-3 px-4 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      {/* Table Header - Hidden on mobile, show cards instead */}
+      <div className="hidden md:grid grid-cols-[1fr,120px,100px,80px,100px,40px] gap-4 items-center py-3 px-4 bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <span>Item</span>
         <span>Category</span>
         <span>Est. Cost</span>
