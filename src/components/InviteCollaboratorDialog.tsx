@@ -13,6 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Event } from "@/hooks/useEvents";
 import { useInvitations } from "@/hooks/useInvitations";
 
@@ -23,6 +30,7 @@ interface InviteCollaboratorDialogProps {
 export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogProps) => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"editor" | "viewer">("editor");
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { inviteToEvents } = useInvitations();
@@ -39,11 +47,12 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
     if (!email.trim() || selectedEventIds.length === 0) return;
 
     setIsSubmitting(true);
-    const success = await inviteToEvents(email.trim(), selectedEventIds);
+    const success = await inviteToEvents(email.trim(), selectedEventIds, role);
     setIsSubmitting(false);
 
     if (success) {
       setEmail("");
+      setRole("editor");
       setSelectedEventIds([]);
       setOpen(false);
     }
@@ -73,8 +82,7 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
         <DialogHeader>
           <DialogTitle>Invite a Collaborator</DialogTitle>
           <DialogDescription>
-            Enter their email and select which events they should have access to.
-            When they sign up, they'll automatically get access.
+            Enter their email, choose their access level, and select which events to share.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -87,6 +95,28 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Access level</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as "editor" | "viewer")}>
+              <SelectTrigger id="role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="editor">
+                  <div>
+                    <p className="font-medium">Editor</p>
+                    <p className="text-xs text-muted-foreground">Can view and make changes (e.g. employees)</p>
+                  </div>
+                </SelectItem>
+                <SelectItem value="viewer">
+                  <div>
+                    <p className="font-medium">Viewer</p>
+                    <p className="text-xs text-muted-foreground">Can view only, no edits (e.g. clients)</p>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Select events</Label>

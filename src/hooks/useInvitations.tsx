@@ -47,10 +47,10 @@ export const useInvitations = () => {
             .single();
 
           if (!existing) {
-            // Add as collaborator
             await supabase.from("event_collaborators").insert({
               event_id: invitation.event_id,
               user_id: user.id,
+              role: (invitation as any).role ?? "editor",
             });
           }
 
@@ -76,13 +76,12 @@ export const useInvitations = () => {
     processPendingInvitations();
   }, [processPendingInvitations]);
 
-  const inviteToEvents = async (email: string, eventIds: string[]) => {
+  const inviteToEvents = async (email: string, eventIds: string[], role: "editor" | "viewer" = "editor") => {
     if (!user) return false;
 
     try {
       const normalizedEmail = email.toLowerCase().trim();
 
-      // Check if user is inviting themselves
       if (normalizedEmail === user.email?.toLowerCase()) {
         toast({
           title: "Cannot invite yourself",
@@ -96,15 +95,14 @@ export const useInvitations = () => {
         event_id: eventId,
         email: normalizedEmail,
         invited_by: user.id,
+        role,
       }));
 
-      // Create invitations
       const { error: inviteError } = await supabase
         .from("event_invitations")
         .insert(invitationsToCreate);
 
       if (inviteError) {
-        // Check for duplicate
         if (inviteError.code === "23505") {
           toast({
             title: "Already invited",
@@ -116,9 +114,10 @@ export const useInvitations = () => {
         throw inviteError;
       }
 
+      const roleLabel = role === "viewer" ? "viewer (read-only)" : "editor";
       toast({
         title: "Invitation created!",
-        description: `When ${normalizedEmail} signs up, they'll automatically have access to the selected event${eventIds.length > 1 ? "s" : ""}.`,
+        description: `${normalizedEmail} will get ${roleLabel} access when they next log in.`,
       });
 
       return true;
