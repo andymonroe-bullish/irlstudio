@@ -94,11 +94,19 @@ export const useEvents = () => {
     try {
       const budgetNumber = parseInt(eventData.budget.replace(/[^0-9]/g, "")) || 50000;
 
+      const eventTypeLabels: Record<string, string> = {
+        mastermind: "Mastermind", fulfillment: "Fulfillment",
+        acquisition: "Acquisition", activation: "Activation", networking: "Networking",
+      };
+      const defaultName = `${eventTypeLabels[eventData.eventType] || eventData.eventType} Event`;
+
       const { data: newEvent, error: eventError } = await supabase
         .from("events")
         .insert({
           created_by: user.id,
           type: eventData.eventType,
+          name: defaultName,
+          status: "draft",
           total_budget: budgetNumber,
           event_date: eventData.dateRange.from?.toISOString(),
           event_end_date: eventData.dateRange.to?.toISOString() || null,
