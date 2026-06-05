@@ -51,7 +51,7 @@ const EventCard = ({
     networking: "Networking",
   };
 
-  const displayName = event.name || `${eventTypeLabels[event.event_type] || event.event_type} Event`;
+  const displayName = event.name || `${eventTypeLabels[event.type] || event.type} Event`;
 
   const handleSaveName = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,7 +77,7 @@ const EventCard = ({
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
           <span className="text-xs font-medium text-primary uppercase tracking-wider">
-            {eventTypeLabels[event.event_type] || event.event_type}
+            {eventTypeLabels[event.type] || event.type}
           </span>
           {isEditing ? (
             <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
@@ -162,13 +162,13 @@ const EventCard = ({
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="w-4 h-4" />
           <span className="text-sm">
-            {format(new Date(event.start_date), "MMM d, yyyy")}
-            {event.end_date && ` - ${format(new Date(event.end_date), "MMM d, yyyy")}`}
+            {format(new Date(event.event_date), "MMM d, yyyy")}
+            {event.event_end_date && ` - ${format(new Date(event.event_end_date), "MMM d, yyyy")}`}
           </span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <DollarSign className="w-4 h-4" />
-          <span className="text-sm">{formatCurrency(event.budget)} Budget</span>
+          <span className="text-sm">{formatCurrency(event.total_budget)} Budget</span>
         </div>
       </div>
 

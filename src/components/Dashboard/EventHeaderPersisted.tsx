@@ -34,7 +34,7 @@ const EventHeaderPersisted = ({ event }: EventHeaderPersistedProps) => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <span className="text-sm font-medium text-primary uppercase tracking-wider">
-            {eventTypeLabels[event.event_type] || event.event_type} Event
+            {eventTypeLabels[event.type] || event.type} Event
           </span>
           <h1 className="text-3xl font-bold text-foreground mt-1">
             Event Dashboard
@@ -45,13 +45,13 @@ const EventHeaderPersisted = ({ event }: EventHeaderPersistedProps) => {
           <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-xl border border-border">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">
-              {format(new Date(event.start_date), "MMM d, yyyy")}
-              {event.end_date && ` - ${format(new Date(event.end_date), "MMM d, yyyy")}`}
+              {format(new Date(event.event_date), "MMM d, yyyy")}
+              {event.event_end_date && ` - ${format(new Date(event.event_end_date), "MMM d, yyyy")}`}
             </span>
           </div>
           <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-xl border border-border">
             <DollarSign className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{formatCurrency(event.budget)}</span>
+            <span className="text-sm font-medium">{formatCurrency(event.total_budget)}</span>
           </div>
         </div>
       </div>

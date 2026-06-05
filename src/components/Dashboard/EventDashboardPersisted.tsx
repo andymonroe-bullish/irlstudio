@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ListTodo, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
 import BudgetManagerPersisted from "./BudgetManagerPersisted";
 import ProjectionsManagerPersisted from "./ProjectionsManagerPersisted";
 import ItineraryManager from "./ItineraryManager";
+import NotesManager from "./NotesManager";
 
 interface EventDashboardPersistedProps {
   event: Event;
 }
 
-type DashboardView = "tasks" | "budget" | "projections" | "itinerary";
+type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes";
 
 const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
   const [activeView, setActiveView] = useState<DashboardView>("tasks");
@@ -23,12 +24,13 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
     { id: "budget" as DashboardView, label: "Budget", icon: DollarSign },
     { id: "projections" as DashboardView, label: "Projections", icon: TrendingUp },
     { id: "itinerary" as DashboardView, label: "Itinerary", icon: Calendar },
+    { id: "notes" as DashboardView, label: "Notes", icon: StickyNote },
   ];
 
   const daysUntilEvent = Math.max(
     0,
     Math.ceil(
-      (new Date(event.start_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      (new Date(event.event_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
     )
   );
 
@@ -85,7 +87,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         )}
         {activeView === "budget" && (
           <BudgetManagerPersisted
-            totalBudget={event.budget}
+            totalBudget={event.total_budget}
             items={eventData.budgetItems}
             onUpdateItem={eventData.updateBudgetItem}
             onAddItem={eventData.addBudgetItem}
@@ -95,7 +97,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         )}
         {activeView === "projections" && (
           <ProjectionsManagerPersisted
-            totalBudget={event.budget}
+            totalBudget={event.total_budget}
             streams={eventData.revenueStreams}
             onUpdateStream={eventData.updateRevenueStream}
             onAddStream={eventData.addRevenueStream}
@@ -105,8 +107,11 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         {activeView === "itinerary" && (
           <ItineraryManager
             eventId={event.id}
-            eventStartDate={event.start_date}
+            eventStartDate={event.event_date}
           />
+        )}
+        {activeView === "notes" && (
+          <NotesManager eventId={event.id} />
         )}
       </div>
     </motion.div>
