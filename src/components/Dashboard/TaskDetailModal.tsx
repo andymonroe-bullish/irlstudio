@@ -12,6 +12,7 @@ import {
   CheckSquare,
   ExternalLink,
   Upload,
+  CalendarDays,
 } from "lucide-react";
 import {
   Dialog,
@@ -32,9 +33,10 @@ interface TaskDetailModalProps {
   task: Task;
   open: boolean;
   onClose: () => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
 }
 
-const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
+const TaskDetailModal = ({ task, open, onClose, onUpdateTask }: TaskDetailModalProps) => {
   const {
     subTasks,
     files,
@@ -99,6 +101,27 @@ const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">{task.title}</DialogTitle>
+          {/* Due Date Row */}
+          <div className="flex items-center gap-2 pt-1">
+            <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-muted-foreground">Due date:</span>
+            <input
+              type="date"
+              defaultValue={task.due_date || ""}
+              className="h-7 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+              onChange={(e) => {
+                onUpdateTask(task.id, { due_date: e.target.value || null });
+              }}
+            />
+            {task.due_date && (
+              <button
+                onClick={() => onUpdateTask(task.id, { due_date: null })}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </DialogHeader>
 
         {loading ? (

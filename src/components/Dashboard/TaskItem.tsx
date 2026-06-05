@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Check, Circle, Clock, Trash2, User, ChevronDown, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Check, Circle, Clock, Trash2, User, ChevronDown, ChevronRight, MoreHorizontal, CalendarDays } from "lucide-react";
 import { Task, TaskStatus } from "./types";
 import { cn } from "@/lib/utils";
+import { format, parseISO, isPast } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,7 @@ interface TaskItemProps {
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onAssigneeChange: (taskId: string, assignee: string) => void;
   onDelete: (taskId: string) => void;
+  onUpdateTask: (taskId: string, updates: Partial<TaskData>) => Promise<void>;
 }
 
 const statusConfig = {
@@ -51,6 +53,7 @@ const TaskItem = ({
   onStatusChange,
   onAssigneeChange,
   onDelete,
+  onUpdateTask,
 }: TaskItemProps) => {
   const status = statusConfig[task.status];
   const StatusIcon = status.icon;
@@ -127,6 +130,21 @@ const TaskItem = ({
               >
                 {task.title}
               </span>
+
+              {/* Due Date Badge */}
+              {taskData.due_date && task.status !== "completed" && (
+                <span
+                  className={cn(
+                    "hidden sm:flex items-center gap-1 text-xs px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0",
+                    isPast(parseISO(taskData.due_date))
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <CalendarDays className="w-3 h-3" />
+                  {format(parseISO(taskData.due_date), "MMM d")}
+                </span>
+              )}
 
               {/* Assignee - Hidden on mobile */}
               <DropdownMenu>
@@ -234,6 +252,7 @@ const TaskItem = ({
         task={taskData}
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
+        onUpdateTask={onUpdateTask}
       />
     </>
   );

@@ -23,6 +23,8 @@ interface BudgetManagerPersistedProps {
   onReorderItems: (items: BudgetItem[]) => Promise<void>;
 }
 
+type LocalEdits = Record<string, { name?: string; estimated_cost?: string; actual_cost?: string }>;
+
 const BudgetManagerPersisted = ({
   totalBudget,
   items,
@@ -36,6 +38,8 @@ const BudgetManagerPersisted = ({
     category: "other",
     estimatedCost: 0,
   });
+  // Local editing state — only synced to DB on blur
+  const [localEdits, setLocalEdits] = useState<LocalEdits>({});
 
   const totalEstimated = items.reduce((sum, item) => sum + item.estimated_cost, 0);
   const totalActual = items.reduce((sum, item) => sum + item.actual_cost, 0);
@@ -51,13 +55,65 @@ const BudgetManagerPersisted = ({
     }).format(value);
   };
 
-  const handleUpdateItem = (id: string, field: string, value: string | number) => {
-    const dbUpdates: Partial<BudgetItem> = {};
-    if (field === "name") dbUpdates.name = value as string;
-    if (field === "category") dbUpdates.category = value as string;
-    if (field === "estimated_cost") dbUpdates.estimated_cost = value as number;
-    if (field === "actual_cost") dbUpdates.actual_cost = value as number;
-    onUpdateItem(id, dbUpdates);
+  // Get display value: use local edit if present, otherwise DB value
+  const getLocalValue = (
+    itemId: string,
+    field: "name" | "estimated_cost" | "actual_cost",
+    dbValue: string | number
+  ) => {
+    return localEdits[itemId]?.[field] ?? String(dbValue);
+  };
+
+  const handleFocusField = (
+    itemId: string,
+    field: "name" | "estimated_cost" | "actual_cost",
+    dbValue: string | number
+  ) => {
+    setLocalEdits((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], [field]: String(dbValue) },
+    }));
+  };
+
+  const handleLocalChange = (
+    itemId: string,
+    field: "name" | "estimated_cost" | "actual_cost",
+    value: string
+  ) => {
+    setLocalEdits((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], [field]: value },
+    }));
+  };
+
+  const handleBlurField = (
+    itemId: string,
+    field: "name" | "estimated_cost" | "actual_cost"
+  ) => {
+    const localVal = localEdits[itemId]?.[field];
+    if (localVal === undefined) return;
+
+    const updates: Partial<BudgetItem> = {};
+    if (field === "name") updates.name = localVal;
+    if (field === "estimated_cost") updates.estimated_cost = parseFloat(localVal) || 0;
+    if (field === "actual_cost") updates.actual_cost = parseFloat(localVal) || 0;
+
+    onUpdateItem(itemId, updates);
+
+    // Clear local edit for this field
+    setLocalEdits((prev) => {
+      const next = { ...prev };
+      if (next[itemId]) {
+        const updated = { ...next[itemId] };
+        delete updated[field];
+        if (Object.keys(updated).length === 0) {
+          delete next[itemId];
+        } else {
+          next[itemId] = updated;
+        }
+      }
+      return next;
+    });
   };
 
   const handleAddItem = () => {
@@ -124,7 +180,7 @@ const BudgetManagerPersisted = ({
           <span>{budgetUsedPercent.toFixed(0)}%</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div 
+          <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
               budgetUsedPercent > 100 ? "bg-destructive" : budgetUsedPercent > 80 ? "bg-yellow-500" : "bg-primary"
@@ -134,7 +190,7 @@ const BudgetManagerPersisted = ({
         </div>
       </div>
 
-      {/* Compact Expense Table */}
+      {/* Expense Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="flex items-center justify-between p-3 border-b border-border">
           <h3 className="font-medium text-foreground text-sm">Expenses</h3>
@@ -145,20 +201,20 @@ const BudgetManagerPersisted = ({
         </div>
 
         {/* Table Header */}
-        <div className="hidden sm:grid grid-cols-[1fr,100px,80px,80px,32px] gap-2 px-3 py-2 bg-muted/30 text-xs font-medium text-muted-foreground">
+        <div className="hidden sm:grid grid-cols-[1fr,100px,90px,90px,32px] gap-2 px-3 py-2 bg-muted/30 text-xs font-medium text-muted-foreground">
           <span>Item</span>
           <span>Category</span>
-          <span>Est.</span>
+          <span>Estimated</span>
           <span>Actual</span>
           <span></span>
         </div>
 
         {/* Items */}
-        <div className="max-h-[280px] overflow-y-auto">
+        <div className="max-h-[320px] overflow-y-auto">
           {items.map((item) => (
             <div
               key={item.id}
-              className="group grid grid-cols-1 sm:grid-cols-[1fr,100px,80px,80px,32px] gap-2 px-3 py-2 border-b border-border/50 hover:bg-muted/20 items-center"
+              className="group grid grid-cols-1 sm:grid-cols-[1fr,100px,90px,90px,32px] gap-2 px-3 py-2 border-b border-border/50 hover:bg-muted/20 items-center"
             >
               {/* Mobile: Stacked Layout */}
               <div className="sm:hidden">
@@ -180,17 +236,21 @@ const BudgetManagerPersisted = ({
                 </div>
               </div>
 
-              {/* Desktop: Grid Layout */}
+              {/* Desktop: Name */}
               <Input
-                value={item.name}
-                onChange={(e) => handleUpdateItem(item.id, "name", e.target.value)}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0"
+                value={getLocalValue(item.id, "name", item.name)}
+                onFocus={() => handleFocusField(item.id, "name", item.name)}
+                onChange={(e) => handleLocalChange(item.id, "name", e.target.value)}
+                onBlur={() => handleBlurField(item.id, "name")}
+                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded"
               />
+
+              {/* Desktop: Category */}
               <Select
                 value={item.category}
-                onValueChange={(v) => handleUpdateItem(item.id, "category", v)}
+                onValueChange={(v) => onUpdateItem(item.id, { category: v })}
               >
-                <SelectTrigger className="hidden sm:flex h-7 text-[10px] border-0 bg-transparent p-0 gap-1">
+                <SelectTrigger className="hidden sm:flex h-7 text-[10px] border-0 bg-transparent p-0 gap-1 focus:ring-0">
                   <span className={cn("px-1.5 py-0.5 rounded font-medium", getCategoryColor(item.category))}>
                     {getCategoryName(item.category)}
                   </span>
@@ -203,18 +263,27 @@ const BudgetManagerPersisted = ({
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Desktop: Estimated Cost */}
               <Input
                 type="number"
-                value={item.estimated_cost}
-                onChange={(e) => handleUpdateItem(item.id, "estimated_cost", Number(e.target.value))}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0 w-full"
+                value={getLocalValue(item.id, "estimated_cost", item.estimated_cost)}
+                onFocus={() => handleFocusField(item.id, "estimated_cost", item.estimated_cost)}
+                onChange={(e) => handleLocalChange(item.id, "estimated_cost", e.target.value)}
+                onBlur={() => handleBlurField(item.id, "estimated_cost")}
+                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded w-full"
               />
+
+              {/* Desktop: Actual Cost */}
               <Input
                 type="number"
-                value={item.actual_cost}
-                onChange={(e) => handleUpdateItem(item.id, "actual_cost", Number(e.target.value))}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-0 focus-visible:ring-0 text-green-600 w-full"
+                value={getLocalValue(item.id, "actual_cost", item.actual_cost)}
+                onFocus={() => handleFocusField(item.id, "actual_cost", item.actual_cost)}
+                onChange={(e) => handleLocalChange(item.id, "actual_cost", e.target.value)}
+                onBlur={() => handleBlurField(item.id, "actual_cost")}
+                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-full"
               />
+
               <button
                 onClick={() => onDeleteItem(item.id)}
                 className="hidden sm:block opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
@@ -235,6 +304,10 @@ const BudgetManagerPersisted = ({
                 onChange={(e) => setNewItem((prev) => ({ ...prev, name: e.target.value }))}
                 className="h-8 text-sm flex-1"
                 autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddItem();
+                  if (e.key === "Escape") setIsAddingItem(false);
+                }}
               />
               <Select
                 value={newItem.category}
@@ -254,7 +327,7 @@ const BudgetManagerPersisted = ({
                 placeholder="0"
                 value={newItem.estimatedCost || ""}
                 onChange={(e) => setNewItem((prev) => ({ ...prev, estimatedCost: Number(e.target.value) }))}
-                className="h-8 text-sm w-full sm:w-20"
+                className="h-8 text-sm w-full sm:w-24"
               />
               <div className="flex gap-1">
                 <Button size="sm" onClick={handleAddItem} className="h-8 text-xs">Add</Button>

@@ -15,6 +15,7 @@ export interface Event {
   end_date: string | null;
   created_at: string;
   updated_at: string;
+  phase_due_dates?: Record<string, string>;
 }
 
 export interface Task {
@@ -247,6 +248,7 @@ export const useEventData = (eventId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [revenueStreams, setRevenueStreams] = useState<RevenueStream[]>([]);
+  const [phaseDueDates, setPhaseDueDates] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -255,10 +257,11 @@ export const useEventData = (eventId: string) => {
 
     try {
       setLoading(true);
-      const [tasksRes, budgetRes, revenueRes] = await Promise.all([
+      const [tasksRes, budgetRes, revenueRes, eventRes] = await Promise.all([
         supabase.from("tasks").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("budget_items").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("revenue_streams").select("*").eq("event_id", eventId).order("sort_order"),
+        supabase.from("events").select("phase_due_dates").eq("id", eventId).single(),
       ]);
 
       if (tasksRes.error) throw tasksRes.error;
@@ -268,6 +271,9 @@ export const useEventData = (eventId: string) => {
       setTasks(tasksRes.data || []);
       setBudgetItems(budgetRes.data || []);
       setRevenueStreams(revenueRes.data || []);
+      if (eventRes.data?.phase_due_dates) {
+        setPhaseDueDates(eventRes.data.phase_due_dates as Record<string, string>);
+      }
     } catch (error: any) {
       toast({
         title: "Error fetching event data",
@@ -377,6 +383,27 @@ export const useEventData = (eventId: string) => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  // Phase due date operations
+  const updatePhaseDueDate = async (phaseId: string, dueDate: string | null) => {
+    const newPhaseDueDates = { ...phaseDueDates };
+    if (dueDate) {
+      newPhaseDueDates[phaseId] = dueDate;
+    } else {
+      delete newPhaseDueDates[phaseId];
+    }
+    setPhaseDueDates(newPhaseDueDates);
+
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ phase_due_dates: newPhaseDueDates })
+        .eq("id", eventId);
+      if (error) throw error;
+    } catch (error: any) {
+      toast({ title: "Error updating phase due date", description: error.message, variant: "destructive" });
     }
   };
 
@@ -535,8 +562,10 @@ export const useEventData = (eventId: string) => {
     tasks,
     budgetItems,
     revenueStreams,
+    phaseDueDates,
     loading,
     updateTask,
+    updatePhaseDueDate,
     addTask,
     deleteTask,
     reorderTasks,

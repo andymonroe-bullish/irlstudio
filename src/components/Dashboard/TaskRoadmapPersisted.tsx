@@ -10,6 +10,8 @@ interface TaskRoadmapPersistedProps {
   onAddTask: (phaseId: string, title: string) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
   onReorderTasks: (tasks: Task[]) => Promise<void>;
+  phaseDueDates: Record<string, string>;
+  onUpdatePhaseDueDate: (phaseId: string, dueDate: string | null) => Promise<void>;
 }
 
 const PHASE_CONFIG = [
@@ -25,6 +27,8 @@ const TaskRoadmapPersisted = ({
   onAddTask,
   onDeleteTask,
   onReorderTasks,
+  phaseDueDates,
+  onUpdatePhaseDueDate,
 }: TaskRoadmapPersistedProps) => {
   const [expandedPhases, setExpandedPhases] = useState<string[]>(["design"]);
 
@@ -164,6 +168,9 @@ const TaskRoadmapPersisted = ({
               }
               onDeleteTask={(taskId) => handleDeleteTask(phase.id, taskId)}
               onAddTask={(title) => handleAddTask(phase.id, title)}
+              onUpdateTask={onUpdateTask}
+              phaseDueDate={phaseDueDates[phase.id] || null}
+              onUpdatePhaseDueDate={(dueDate) => onUpdatePhaseDueDate(phase.id, dueDate)}
             />
           ))}
         </div>

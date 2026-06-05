@@ -79,6 +79,8 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
               onAddTask={eventData.addTask}
               onDeleteTask={eventData.deleteTask}
               onReorderTasks={eventData.reorderTasks}
+              phaseDueDates={eventData.phaseDueDates}
+              onUpdatePhaseDueDate={eventData.updatePhaseDueDate}
             />
           )}
           {activeView === "budget" && (

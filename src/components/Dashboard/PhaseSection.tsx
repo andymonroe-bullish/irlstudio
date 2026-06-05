@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Droppable } from "@hello-pangea/dnd";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, CalendarDays, X } from "lucide-react";
 import { Phase, Task, TaskStatus } from "./types";
 import TaskItem from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Task as TaskData } from "@/hooks/useEvents";
+import { format, parseISO } from "date-fns";
 
 interface PhaseSectionProps {
   phase: Phase;
@@ -17,6 +18,9 @@ interface PhaseSectionProps {
   onAssigneeChange: (taskId: string, assignee: string) => void;
   onDeleteTask: (taskId: string) => void;
   onAddTask: (title: string) => void;
+  onUpdateTask: (taskId: string, updates: Partial<TaskData>) => Promise<void>;
+  phaseDueDate: string | null;
+  onUpdatePhaseDueDate: (dueDate: string | null) => void;
 }
 
 const PhaseSection = ({
@@ -28,12 +32,16 @@ const PhaseSection = ({
   onAssigneeChange,
   onDeleteTask,
   onAddTask,
+  onUpdateTask,
+  phaseDueDate,
+  onUpdatePhaseDueDate,
 }: PhaseSectionProps) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [showDateInput, setShowDateInput] = useState(false);
 
   const completedCount = phase.tasks.filter((t) => t.status === "completed").length;
-  const progress = (completedCount / phase.tasks.length) * 100;
+  const progress = phase.tasks.length > 0 ? (completedCount / phase.tasks.length) * 100 : 0;
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -51,6 +59,8 @@ const PhaseSection = ({
       setNewTaskTitle("");
     }
   };
+
+  const isOverdue = phaseDueDate && new Date(phaseDueDate) < new Date();
 
   return (
     <div className="overflow-hidden">
@@ -85,7 +95,64 @@ const PhaseSection = ({
             {completedCount}/{phase.tasks.length}
           </span>
         </div>
+
+        {/* Phase Due Date */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDateInput((v) => !v);
+          }}
+          className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
+        >
+          <CalendarDays className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          {phaseDueDate ? (
+            <span className={`text-xs font-medium whitespace-nowrap ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
+              {format(parseISO(phaseDueDate), "MMM d")}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground hidden sm:inline">Set deadline</span>
+          )}
+          {phaseDueDate && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdatePhaseDueDate(null);
+              }}
+              className="ml-1 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </button>
+
+      {/* Date picker for phase deadline */}
+      <AnimatePresence>
+        {showDateInput && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div className="pl-12 pr-4 pb-2 flex items-center gap-2">
+              <input
+                type="date"
+                defaultValue={phaseDueDate || ""}
+                className="h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+                onChange={(e) => {
+                  onUpdatePhaseDueDate(e.target.value || null);
+                  setShowDateInput(false);
+                }}
+              />
+              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setShowDateInput(false)}>
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isExpanded && (
@@ -117,6 +184,7 @@ const PhaseSection = ({
                         onStatusChange={onStatusChange}
                         onAssigneeChange={onAssigneeChange}
                         onDelete={onDeleteTask}
+                        onUpdateTask={onUpdateTask}
                       />
                     ) : null;
                   })}
