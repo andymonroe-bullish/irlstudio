@@ -12,6 +12,7 @@ interface TaskRoadmapPersistedProps {
   onReorderTasks: (tasks: Task[]) => Promise<void>;
   phaseDueDates: Record<string, string>;
   onUpdatePhaseDueDate: (phaseId: string, dueDate: string | null) => Promise<void>;
+  daysUntilEvent: number;
 }
 
 const PHASE_CONFIG = [
@@ -29,6 +30,7 @@ const TaskRoadmapPersisted = ({
   onReorderTasks,
   phaseDueDates,
   onUpdatePhaseDueDate,
+  daysUntilEvent,
 }: TaskRoadmapPersistedProps) => {
   const [expandedPhases, setExpandedPhases] = useState<string[]>(["design"]);
 
@@ -144,11 +146,17 @@ const TaskRoadmapPersisted = ({
 
   return (
     <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-foreground">Task Roadmap</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Track your progress through each phase.
-        </p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Task Roadmap</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Track your progress through each phase.
+          </p>
+        </div>
+        <div className="text-center bg-muted/50 rounded-xl px-4 py-2 border border-border flex-shrink-0">
+          <span className="text-2xl font-bold text-primary block">{daysUntilEvent}</span>
+          <span className="text-xs text-muted-foreground">days away</span>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>

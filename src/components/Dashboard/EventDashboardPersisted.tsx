@@ -70,65 +70,43 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
       </div>
 
       {/* Dashboard Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className={activeView === "tasks" ? "lg:col-span-3" : "lg:col-span-4"}>
-          {activeView === "tasks" && (
-            <TaskRoadmapPersisted
-              tasks={eventData.tasks}
-              onUpdateTask={eventData.updateTask}
-              onAddTask={eventData.addTask}
-              onDeleteTask={eventData.deleteTask}
-              onReorderTasks={eventData.reorderTasks}
-              phaseDueDates={eventData.phaseDueDates}
-              onUpdatePhaseDueDate={eventData.updatePhaseDueDate}
-            />
-          )}
-          {activeView === "budget" && (
-            <BudgetManagerPersisted
-              totalBudget={event.budget}
-              items={eventData.budgetItems}
-              onUpdateItem={eventData.updateBudgetItem}
-              onAddItem={eventData.addBudgetItem}
-              onDeleteItem={eventData.deleteBudgetItem}
-              onReorderItems={eventData.reorderBudgetItems}
-            />
-          )}
-          {activeView === "projections" && (
-            <ProjectionsManagerPersisted
-              totalBudget={event.budget}
-              streams={eventData.revenueStreams}
-              onUpdateStream={eventData.updateRevenueStream}
-              onAddStream={eventData.addRevenueStream}
-              onDeleteStream={eventData.deleteRevenueStream}
-            />
-          )}
-          {activeView === "itinerary" && (
-            <ItineraryManager
-              eventId={event.id}
-              eventStartDate={event.start_date}
-            />
-          )}
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         {activeView === "tasks" && (
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-card rounded-2xl border border-border p-6 shadow-card"
-            >
-              <h3 className="font-semibold text-foreground mb-4">Countdown</h3>
-              <div className="text-center py-4">
-                <span className="text-4xl font-bold text-primary">
-                  {daysUntilEvent}
-                </span>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Days until your event
-                </p>
-              </div>
-            </motion.div>
-          </div>
+          <TaskRoadmapPersisted
+            tasks={eventData.tasks}
+            onUpdateTask={eventData.updateTask}
+            onAddTask={eventData.addTask}
+            onDeleteTask={eventData.deleteTask}
+            onReorderTasks={eventData.reorderTasks}
+            phaseDueDates={eventData.phaseDueDates}
+            onUpdatePhaseDueDate={eventData.updatePhaseDueDate}
+            daysUntilEvent={daysUntilEvent}
+          />
+        )}
+        {activeView === "budget" && (
+          <BudgetManagerPersisted
+            totalBudget={event.budget}
+            items={eventData.budgetItems}
+            onUpdateItem={eventData.updateBudgetItem}
+            onAddItem={eventData.addBudgetItem}
+            onDeleteItem={eventData.deleteBudgetItem}
+            onReorderItems={eventData.reorderBudgetItems}
+          />
+        )}
+        {activeView === "projections" && (
+          <ProjectionsManagerPersisted
+            totalBudget={event.budget}
+            streams={eventData.revenueStreams}
+            onUpdateStream={eventData.updateRevenueStream}
+            onAddStream={eventData.addRevenueStream}
+            onDeleteStream={eventData.deleteRevenueStream}
+          />
+        )}
+        {activeView === "itinerary" && (
+          <ItineraryManager
+            eventId={event.id}
+            eventStartDate={event.start_date}
+          />
         )}
       </div>
     </motion.div>

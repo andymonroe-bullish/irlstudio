@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Check, Circle, Clock, Trash2, User, ChevronDown, ChevronRight, MoreHorizontal, CalendarDays } from "lucide-react";
+import { Check, Circle, Clock, Trash2, User, ChevronDown, MoreHorizontal, CalendarDays, X } from "lucide-react";
 import { Task, TaskStatus } from "./types";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast } from "date-fns";
@@ -59,6 +59,28 @@ const TaskItem = ({
   const StatusIcon = status.icon;
   const [subTasksExpanded, setSubTasksExpanded] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const hasDate = !!taskData.due_date;
+  const isOverdue = hasDate && task.status !== "completed" && isPast(parseISO(taskData.due_date!));
+
+  const handleDateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDatePicker(true);
+    setTimeout(() => dateInputRef.current?.showPicker?.(), 50);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onUpdateTask(task.id, { due_date: e.target.value || null });
+    setShowDatePicker(false);
+  };
+
+  const handleClearDate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUpdateTask(task.id, { due_date: null });
+  };
 
   return (
     <>
@@ -131,20 +153,52 @@ const TaskItem = ({
                 {task.title}
               </span>
 
-              {/* Due Date Badge */}
-              {taskData.due_date && task.status !== "completed" && (
-                <span
-                  className={cn(
-                    "hidden sm:flex items-center gap-1 text-xs px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0",
-                    isPast(parseISO(taskData.due_date))
-                      ? "bg-destructive/10 text-destructive"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  <CalendarDays className="w-3 h-3" />
-                  {format(parseISO(taskData.due_date), "MMM d")}
-                </span>
-              )}
+              {/* Due Date — always visible, inline editable */}
+              <div
+                className="hidden sm:flex items-center gap-1 flex-shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {showDatePicker ? (
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    defaultValue={taskData.due_date || ""}
+                    autoFocus
+                    className="h-6 px-1.5 text-xs rounded border border-border bg-background text-foreground w-32"
+                    onChange={handleDateChange}
+                    onBlur={() => setShowDatePicker(false)}
+                  />
+                ) : hasDate ? (
+                  <span
+                    onClick={handleDateClick}
+                    className={cn(
+                      "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded cursor-pointer transition-colors",
+                      isOverdue
+                        ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    <CalendarDays className="w-3 h-3" />
+                    {format(parseISO(taskData.due_date!), "MMM d")}
+                    {task.status !== "completed" && (
+                      <button
+                        onClick={handleClearDate}
+                        className="ml-0.5 hover:text-destructive transition-colors"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleDateClick}
+                    className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/50 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <CalendarDays className="w-3 h-3" />
+                    <span>Set date</span>
+                  </button>
+                )}
+              </div>
 
               {/* Assignee - Hidden on mobile */}
               <DropdownMenu>
@@ -181,7 +235,7 @@ const TaskItem = ({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Status Badge - Smaller on mobile */}
+              {/* Status Badge */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -225,7 +279,7 @@ const TaskItem = ({
                 <MoreHorizontal className="w-4 h-4" />
               </button>
 
-              {/* Delete - Hidden on mobile, accessible via detail modal */}
+              {/* Delete */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
