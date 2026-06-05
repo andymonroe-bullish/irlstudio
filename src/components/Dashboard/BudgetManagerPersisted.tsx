@@ -55,7 +55,17 @@ const BudgetManagerPersisted = ({
     }).format(value);
   };
 
-  // Get display value: use local edit if present, otherwise DB value
+  // Get display value: raw number while editing, formatted currency when not
+  const getDisplayValue = (
+    itemId: string,
+    field: "estimated_cost" | "actual_cost",
+    dbValue: number
+  ) => {
+    const localVal = localEdits[itemId]?.[field];
+    if (localVal !== undefined) return localVal; // raw while editing
+    return formatCurrency(dbValue); // formatted when idle
+  };
+
   const getLocalValue = (
     itemId: string,
     field: "name" | "estimated_cost" | "actual_cost",
@@ -266,20 +276,28 @@ const BudgetManagerPersisted = ({
 
               {/* Desktop: Estimated Cost */}
               <Input
-                type="number"
-                value={getLocalValue(item.id, "estimated_cost", item.estimated_cost)}
-                onFocus={() => handleFocusField(item.id, "estimated_cost", item.estimated_cost)}
-                onChange={(e) => handleLocalChange(item.id, "estimated_cost", e.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={getDisplayValue(item.id, "estimated_cost", item.estimated_cost)}
+                onFocus={(e) => {
+                  handleFocusField(item.id, "estimated_cost", item.estimated_cost);
+                  e.target.select();
+                }}
+                onChange={(e) => handleLocalChange(item.id, "estimated_cost", e.target.value.replace(/[^0-9.]/g, ""))}
                 onBlur={() => handleBlurField(item.id, "estimated_cost")}
                 className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded w-full"
               />
 
               {/* Desktop: Actual Cost */}
               <Input
-                type="number"
-                value={getLocalValue(item.id, "actual_cost", item.actual_cost)}
-                onFocus={() => handleFocusField(item.id, "actual_cost", item.actual_cost)}
-                onChange={(e) => handleLocalChange(item.id, "actual_cost", e.target.value)}
+                type="text"
+                inputMode="numeric"
+                value={getDisplayValue(item.id, "actual_cost", item.actual_cost)}
+                onFocus={(e) => {
+                  handleFocusField(item.id, "actual_cost", item.actual_cost);
+                  e.target.select();
+                }}
+                onChange={(e) => handleLocalChange(item.id, "actual_cost", e.target.value.replace(/[^0-9.]/g, ""))}
                 onBlur={() => handleBlurField(item.id, "actual_cost")}
                 className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-full"
               />
