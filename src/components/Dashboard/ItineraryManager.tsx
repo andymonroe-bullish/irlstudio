@@ -83,27 +83,39 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
     await deleteSession(sessionId);
   };
 
+  const parseTime = (timeStr: string) => {
+    // Handle both "HH:mm" and "HH:mm:ss"
+    const normalized = timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+    return parse(normalized, "HH:mm", new Date());
+  };
+
   const formatTime = (timeStr: string) => {
     try {
-      const time = parse(timeStr, "HH:mm:ss", new Date());
-      return format(time, "HH:mm");
+      return format(parseTime(timeStr), "h:mmaaa"); // → "9:00am", "2:30pm"
     } catch {
       return timeStr.substring(0, 5);
     }
   };
 
+  const formatTimeRange = (start: string, end: string) => {
+    try {
+      return `${formatTime(start)} – ${formatTime(end)}`;
+    } catch {
+      return `${start} – ${end}`;
+    }
+  };
+
   const calculateDuration = (start: string, end: string) => {
     try {
-      const startTime = parse(start, "HH:mm:ss", new Date());
-      const endTime = parse(end, "HH:mm:ss", new Date());
-      const diffMs = endTime.getTime() - startTime.getTime();
-      const diffMins = Math.round(diffMs / 60000);
-      if (diffMins >= 60) {
-        const hours = Math.floor(diffMins / 60);
-        const mins = diffMins % 60;
-        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-      }
-      return `${diffMins}m`;
+      const startTime = parseTime(start);
+      const endTime = parseTime(end);
+      const diffMins = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+      if (diffMins <= 0) return "";
+      if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"}`;
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      const hourStr = `${hours} hour${hours === 1 ? "" : "s"}`;
+      return mins > 0 ? `${hourStr} ${mins} min` : hourStr;
     } catch {
       return "";
     }
@@ -190,35 +202,27 @@ const ItineraryManager = ({ eventId, eventStartDate }: ItineraryManagerProps) =>
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex flex-col sm:flex-row gap-2 sm:gap-4"
+                  className="flex gap-4"
                 >
-                  {/* Time Column */}
-                  <div className="flex sm:flex-col sm:w-16 gap-2 sm:gap-0 sm:text-right flex-shrink-0">
-                    <div className="text-sm font-semibold text-foreground">
-                      {formatTime(session.start_time)}
-                    </div>
-                    <span className="text-muted-foreground sm:hidden">-</span>
-                    <div className="text-xs sm:text-xs text-muted-foreground">
-                      {formatTime(session.end_time)}
-                    </div>
-                  </div>
-
                   {/* Session Card */}
                   <div className="flex-1 group relative bg-muted/30 hover:bg-muted/50 rounded-xl p-3 sm:p-4 border border-border transition-all duration-200">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-foreground truncate">{session.title}</h4>
                         <div className="flex items-center gap-3 sm:gap-4 mt-1 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Clock className="w-3 h-3" />
+                            {formatTimeRange(session.start_time, session.end_time)}
+                          </span>
+                          <span className="text-muted-foreground/60">
+                            {calculateDuration(session.start_time, session.end_time)}
+                          </span>
                           {session.location && (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               <span className="truncate max-w-[100px] sm:max-w-none">{session.location}</span>
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {calculateDuration(session.start_time, session.end_time)}
-                          </span>
                         </div>
                         {session.description && (
                           <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
