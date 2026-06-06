@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Folder, FolderOpen, FileText, Trash2, ChevronRight, Search, Edit2, Check, X } from "lucide-react";
+import { Plus, Folder, FolderOpen, FileText, Trash2, Search, Edit2, Check, X, Bold, Italic } from "lucide-react";
 import { useNotes, NoteFolder, Note } from "@/hooks/useNotes";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,9 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   const [isAddingFolder, setIsAddingFolder] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false });
 
   const selectedNote = notes.find(n => n.id === selectedNoteId) || null;
 
@@ -34,23 +35,18 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
     if (selectedNote) {
       setLocalTitle(selectedNote.title);
       setLocalContent(selectedNote.content);
+      // Set innerHTML after render
+      setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.innerHTML = selectedNote.content || "";
+        }
+      }, 0);
     } else {
       setLocalTitle("");
       setLocalContent("");
+      if (contentRef.current) contentRef.current.innerHTML = "";
     }
   }, [selectedNoteId]);
-
-  // Auto-resize textarea
-  const resizeTextarea = useCallback(() => {
-    if (contentRef.current) {
-      contentRef.current.style.height = "auto";
-      contentRef.current.style.height = contentRef.current.scrollHeight + "px";
-    }
-  }, []);
-
-  useEffect(() => {
-    resizeTextarea();
-  }, [localContent, resizeTextarea]);
 
   const debouncedSave = useCallback((noteId: string, updates: { title?: string; content?: string }) => {
     clearTimeout(saveTimeoutRef.current);
@@ -64,9 +60,30 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
     if (selectedNoteId) debouncedSave(selectedNoteId, { title: value, content: localContent });
   };
 
-  const handleContentChange = (value: string) => {
-    setLocalContent(value);
-    if (selectedNoteId) debouncedSave(selectedNoteId, { title: localTitle, content: value });
+  const handleContentInput = () => {
+    if (!contentRef.current || !selectedNoteId) return;
+    const html = contentRef.current.innerHTML;
+    setLocalContent(html);
+    debouncedSave(selectedNoteId, { title: localTitle, content: html });
+  };
+
+  const updateFormatState = () => {
+    setActiveFormats({
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+    });
+  };
+
+  const applyFormat = (command: "bold" | "italic") => {
+    contentRef.current?.focus();
+    document.execCommand(command, false);
+    updateFormatState();
+    handleContentInput();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "b") { e.preventDefault(); applyFormat("bold"); }
+    if ((e.metaKey || e.ctrlKey) && e.key === "i") { e.preventDefault(); applyFormat("italic"); }
   };
 
   const handleNewNote = async () => {
@@ -319,8 +336,40 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
         <div className="flex-1 flex flex-col min-w-0">
           {selectedNote ? (
             <>
+              {/* Formatting Toolbar */}
+              <div className="flex items-center gap-1 px-6 pt-5 pb-2 border-b border-border/40">
+                <button
+                  onMouseDown={e => { e.preventDefault(); applyFormat("bold"); }}
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded text-sm font-bold transition-colors",
+                    activeFormats.bold
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Bold (⌘B)"
+                >
+                  <Bold className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onMouseDown={e => { e.preventDefault(); applyFormat("italic"); }}
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded transition-colors",
+                    activeFormats.italic
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Italic (⌘I)"
+                >
+                  <Italic className="w-3.5 h-3.5" />
+                </button>
+                <div className="w-px h-4 bg-border mx-1" />
+                <p className="text-xs text-muted-foreground ml-auto">
+                  {format(new Date(selectedNote.updated_at), "MMM d, yyyy 'at' h:mm a")}
+                </p>
+              </div>
+
               {/* Title */}
-              <div className="px-8 pt-8 pb-2">
+              <div className="px-8 pt-5 pb-2">
                 <input
                   ref={titleRef}
                   type="text"
@@ -329,26 +378,21 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                   placeholder="Title"
                   className="w-full text-2xl font-bold bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 border-none"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {format(new Date(selectedNote.updated_at), "MMMM d, yyyy 'at' h:mm a")}
-                </p>
               </div>
 
-              {/* Divider */}
-              <div className="mx-8 border-t border-border/50 mb-2" />
-
-              {/* Content */}
+              {/* Content — contenteditable for rich text */}
               <div className="flex-1 px-8 pb-8 overflow-y-auto">
-                <textarea
+                <div
                   ref={contentRef}
-                  value={localContent}
-                  onChange={e => {
-                    handleContentChange(e.target.value);
-                    resizeTextarea();
-                  }}
-                  placeholder="Start typing…"
-                  className="w-full bg-transparent outline-none text-foreground text-sm leading-relaxed resize-none placeholder:text-muted-foreground/40 border-none min-h-[400px]"
-                  style={{ overflow: "hidden" }}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={handleContentInput}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={updateFormatState}
+                  onMouseUp={updateFormatState}
+                  onSelect={updateFormatState}
+                  data-placeholder="Start typing…"
+                  className="w-full min-h-[400px] bg-transparent outline-none text-foreground text-sm leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
                 />
               </div>
             </>
