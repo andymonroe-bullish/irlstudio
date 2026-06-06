@@ -9,6 +9,8 @@ import EventsList from "./pages/EventsList";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetail from "./pages/EventDetail";
 import Auth from "./pages/Auth";
+import CheckEmail from "./pages/CheckEmail";
+import AuthConfirmed from "./pages/AuthConfirmed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +24,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            <Route path="/auth/confirmed" element={<AuthConfirmed />} />
             <Route
               path="/"
               element={

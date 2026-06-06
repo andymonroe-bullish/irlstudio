@@ -34,11 +34,7 @@ const Auth = () => {
       } else {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
-        toast({
-          title: "Account created!",
-          description: "Welcome to your event management dashboard.",
-        });
-        navigate("/");
+        navigate(`/check-email?email=${encodeURIComponent(email)}`);
       }
     } catch (error: any) {
       toast({
