@@ -11,6 +11,7 @@ import EventDetail from "./pages/EventDetail";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthConfirmed from "./pages/AuthConfirmed";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/check-email" element={<CheckEmail />} />
             <Route path="/auth/confirmed" element={<AuthConfirmed />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route
               path="/"
               element={
