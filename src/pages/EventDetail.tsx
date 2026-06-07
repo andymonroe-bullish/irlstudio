@@ -17,11 +17,12 @@ const EventDetail = () => {
       if (!eventId) return;
 
       try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("*")
-          .eq("id", eventId)
-          .single();
+        // Try slug first, fall back to UUID lookup
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(eventId);
+        const query = supabase.from("events").select("*");
+        const { data, error } = isUuid
+          ? await query.eq("id", eventId).single()
+          : await query.eq("slug", eventId).single();
 
         if (error) throw error;
         setEvent(data);

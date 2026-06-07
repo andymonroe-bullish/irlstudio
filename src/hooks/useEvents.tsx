@@ -10,6 +10,7 @@ export interface Event {
   created_by: string;
   type: string;
   name: string | null;
+  slug: string | null;
   total_budget: number;
   event_date: string;
   event_end_date: string | null;
@@ -17,6 +18,19 @@ export interface Event {
   updated_at: string;
   phase_due_dates?: Record<string, string>;
 }
+
+const generateSlug = (name: string, id: string): string => {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .substring(0, 50);
+  // Append short ID suffix to guarantee uniqueness
+  const suffix = id.substring(0, 6);
+  return base ? `${base}-${suffix}` : id;
+};
 
 export interface Task {
   id: string;
@@ -116,6 +130,11 @@ export const useEvents = () => {
 
       if (eventError) throw eventError;
 
+      // Generate and save slug
+      const slug = generateSlug(defaultName, newEvent.id);
+      await supabase.from("events").update({ slug }).eq("id", newEvent.id);
+      newEvent.slug = slug;
+
       // Create initial tasks
       const initialPhases = getInitialPhases();
       const tasksToInsert = initialPhases.flatMap((phase, phaseIndex) =>
@@ -187,9 +206,10 @@ export const useEvents = () => {
 
   const updateEventName = async (eventId: string, name: string) => {
     try {
-      const { error } = await supabase.from("events").update({ name }).eq("id", eventId);
+      const slug = generateSlug(name, eventId);
+      const { error } = await supabase.from("events").update({ name, slug }).eq("id", eventId);
       if (error) throw error;
-      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, name } : e));
+      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, name, slug } : e));
       toast({ title: "Event renamed" });
     } catch (error: any) {
       toast({ title: "Error renaming event", description: error.message, variant: "destructive" });

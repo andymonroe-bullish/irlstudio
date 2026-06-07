@@ -72,7 +72,7 @@ const EventCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-card rounded-2xl border border-border p-6 shadow-card hover:shadow-lg transition-all cursor-pointer group"
-      onClick={() => !isEditing && navigate(`/event/${event.id}`)}
+      onClick={() => !isEditing && navigate(`/event/${event.slug || event.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
