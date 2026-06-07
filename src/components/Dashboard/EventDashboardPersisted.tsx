@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote } from "lucide-react";
+import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote, Paperclip } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
@@ -8,12 +8,13 @@ import BudgetManagerPersisted from "./BudgetManagerPersisted";
 import ProjectionsManagerPersisted from "./ProjectionsManagerPersisted";
 import ItineraryManager from "./ItineraryManager";
 import NotesManager from "./NotesManager";
+import FilesManager from "./FilesManager";
 
 interface EventDashboardPersistedProps {
   event: Event;
 }
 
-type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes";
+type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes" | "files";
 
 const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
   const [activeView, setActiveView] = useState<DashboardView>("tasks");
@@ -25,6 +26,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
     { id: "projections" as DashboardView, label: "Projections", icon: TrendingUp },
     { id: "itinerary" as DashboardView, label: "Itinerary", icon: Calendar },
     { id: "notes" as DashboardView, label: "Notes", icon: StickyNote },
+    { id: "files" as DashboardView, label: "Files", icon: Paperclip },
   ];
 
   const daysUntilEvent = Math.max(
@@ -112,6 +114,9 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         )}
         {activeView === "notes" && (
           <NotesManager eventId={event.id} />
+        )}
+        {activeView === "files" && (
+          <FilesManager eventId={event.id} />
         )}
       </div>
     </motion.div>
