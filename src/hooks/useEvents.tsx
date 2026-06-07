@@ -75,14 +75,42 @@ export const useEvents = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setEvents(data || []);
+      // Fetch events the user owns AND events they're a collaborator on
+      const [ownedRes, collabRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("*")
+          .eq("created_by", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("event_collaborators")
+          .select("event_id")
+          .eq("user_id", user.id),
+      ]);
+
+      if (ownedRes.error) throw ownedRes.error;
+
+      let allEvents = ownedRes.data || [];
+
+      // Fetch the collaborated events themselves
+      if (collabRes.data && collabRes.data.length > 0) {
+        const collabEventIds = collabRes.data.map(c => c.event_id);
+        const { data: collabEvents, error: collabEventsError } = await supabase
+          .from("events")
+          .select("*")
+          .in("id", collabEventIds)
+          .order("created_at", { ascending: false });
+
+        if (!collabEventsError && collabEvents) {
+          // Merge, avoiding duplicates
+          const ownedIds = new Set(allEvents.map(e => e.id));
+          const newEvents = collabEvents.filter(e => !ownedIds.has(e.id));
+          allEvents = [...allEvents, ...newEvents];
+        }
+      }
+
+      setEvents(allEvents);
     } catch (error: any) {
       toast({
         title: "Error fetching events",
