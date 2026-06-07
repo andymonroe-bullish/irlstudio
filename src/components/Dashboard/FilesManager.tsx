@@ -76,6 +76,8 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkForm, setLinkForm] = useState({ title: "", url: "" });
   const [linkFormError, setLinkFormError] = useState("");
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editingLinkTitle, setEditingLinkTitle] = useState("");
 
   const handleFiles = async (fileList: FileList) => {
     for (const file of Array.from(fileList)) {
@@ -301,6 +303,7 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
           <div className="space-y-2">
             {links.map(link => {
               const config = linkTypeConfig(link.link_type);
+              const isEditing = editingLinkId === link.id;
               return (
                 <motion.div
                   key={link.id}
@@ -312,7 +315,33 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
                     <LinkIcon type={link.link_type} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{link.title}</p>
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        value={editingLinkTitle}
+                        onChange={e => setEditingLinkTitle(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            updateLink(link.id, { title: editingLinkTitle.trim() || link.title });
+                            setEditingLinkId(null);
+                          }
+                          if (e.key === "Escape") setEditingLinkId(null);
+                        }}
+                        onBlur={() => {
+                          updateLink(link.id, { title: editingLinkTitle.trim() || link.title });
+                          setEditingLinkId(null);
+                        }}
+                        className="w-full text-sm font-medium bg-background border border-primary rounded px-2 py-0.5 outline-none"
+                      />
+                    ) : (
+                      <p
+                        className="text-sm font-medium text-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => { setEditingLinkId(link.id); setEditingLinkTitle(link.title); }}
+                        title="Click to rename"
+                      >
+                        {link.title}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{link.url}</p>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
