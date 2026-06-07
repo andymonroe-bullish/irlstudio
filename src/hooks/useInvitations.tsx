@@ -76,7 +76,7 @@ export const useInvitations = () => {
     processPendingInvitations();
   }, [processPendingInvitations]);
 
-  const inviteToEvents = async (email: string, eventIds: string[], role: "editor" | "viewer" = "editor") => {
+  const inviteToEvents = async (email: string, eventIds: string[], role: "admin" | "editor" | "viewer" = "editor") => {
     if (!user) return false;
 
     try {

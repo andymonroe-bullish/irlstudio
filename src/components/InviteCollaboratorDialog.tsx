@@ -30,7 +30,7 @@ interface InviteCollaboratorDialogProps {
 export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogProps) => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"editor" | "viewer">("editor");
+  const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { inviteToEvents } = useInvitations();
@@ -67,7 +67,7 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
   };
 
   const getEventDisplayName = (event: Event) => {
-    return event.name || `${eventTypeLabels[event.event_type] || event.event_type} Event`;
+    return event.name || `${eventTypeLabels[event.type] || event.type} Event`;
   };
 
   return (
@@ -98,11 +98,17 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Access level</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as "editor" | "viewer")}>
+            <Select value={role} onValueChange={(v) => setRole(v as "admin" | "editor" | "viewer")}>
               <SelectTrigger id="role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="admin">
+                  <div>
+                    <p className="font-medium">Admin</p>
+                    <p className="text-xs text-muted-foreground">Full access — can edit, delete, and invite others</p>
+                  </div>
+                </SelectItem>
                 <SelectItem value="editor">
                   <div>
                     <p className="font-medium">Editor</p>
@@ -143,7 +149,7 @@ export const InviteCollaboratorDialog = ({ events }: InviteCollaboratorDialogPro
                           {getEventDisplayName(event)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {eventTypeLabels[event.event_type] || event.event_type}
+                          {eventTypeLabels[event.type] || event.type}
                         </p>
                       </div>
                     </label>
