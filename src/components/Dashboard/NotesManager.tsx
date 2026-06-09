@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Folder, FolderOpen, FileText, Trash2, Search, Edit2, Check, X, Bold, Italic } from "lucide-react";
+import { Plus, Folder, FolderOpen, FileText, Trash2, Search, Edit2, Check, X, Bold, Italic, Link, Link2Off } from "lucide-react";
 import { useNotes, NoteFolder, Note } from "@/hooks/useNotes";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,11 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
-  const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false });
+  const linkInputRef = useRef<HTMLInputElement>(null);
+  const savedSelectionRef = useRef<Range | null>(null);
+  const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, link: false });
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const selectedNote = notes.find(n => n.id === selectedNoteId) || null;
 
@@ -68,10 +72,13 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   };
 
   const updateFormatState = () => {
-    setActiveFormats({
-      bold: document.queryCommandState("bold"),
-      italic: document.queryCommandState("italic"),
-    });
+    const isBold = document.queryCommandState("bold");
+    const isItalic = document.queryCommandState("italic");
+    // Check if cursor is inside a link
+    const sel = window.getSelection();
+    const isLink = !!(sel?.anchorNode && (sel.anchorNode as Element).closest?.("a") ||
+      (sel?.anchorNode?.parentElement as Element)?.closest?.("a"));
+    setActiveFormats({ bold: isBold, italic: isItalic, link: isLink });
   };
 
   const applyFormat = (command: "bold" | "italic") => {
@@ -81,9 +88,78 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
     handleContentInput();
   };
 
+  // Save current selection before link input steals focus
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      savedSelectionRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const restoreSelection = () => {
+    const sel = window.getSelection();
+    if (sel && savedSelectionRef.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedSelectionRef.current);
+    }
+  };
+
+  const openLinkInput = () => {
+    // Check if cursor is on an existing link — pre-fill its URL
+    const sel = window.getSelection();
+    const anchor = (sel?.anchorNode?.parentElement as Element)?.closest?.("a") as HTMLAnchorElement | null;
+    saveSelection();
+    setLinkUrl(anchor?.href || "https://");
+    setShowLinkInput(true);
+    setTimeout(() => {
+      linkInputRef.current?.focus();
+      linkInputRef.current?.select();
+    }, 50);
+  };
+
+  const applyLink = () => {
+    const url = linkUrl.trim();
+    restoreSelection();
+    contentRef.current?.focus();
+    if (url && url !== "https://") {
+      const fullUrl = url.startsWith("http") ? url : `https://${url}`;
+      document.execCommand("createLink", false, fullUrl);
+      // Make all links in the editor open in new tab
+      contentRef.current?.querySelectorAll("a").forEach(a => {
+        a.setAttribute("target", "_blank");
+        a.setAttribute("rel", "noopener noreferrer");
+      });
+    } else {
+      document.execCommand("unlink", false);
+    }
+    handleContentInput();
+    setShowLinkInput(false);
+    setLinkUrl("");
+  };
+
+  const removeLink = () => {
+    restoreSelection();
+    contentRef.current?.focus();
+    document.execCommand("unlink", false);
+    handleContentInput();
+    setShowLinkInput(false);
+    updateFormatState();
+  };
+
+  // Handle clicks inside the editor — open links in new tab
+  const handleEditorClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const anchor = target.closest("a") as HTMLAnchorElement | null;
+    if (anchor && (e.metaKey || e.ctrlKey || e.altKey)) {
+      e.preventDefault();
+      window.open(anchor.href, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "b") { e.preventDefault(); applyFormat("bold"); }
     if ((e.metaKey || e.ctrlKey) && e.key === "i") { e.preventDefault(); applyFormat("italic"); }
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); openLinkInput(); }
   };
 
   const handleNewNote = async () => {
@@ -342,10 +418,8 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                 <button
                   onMouseDown={e => { e.preventDefault(); applyFormat("bold"); }}
                   className={cn(
-                    "flex items-center justify-center w-7 h-7 rounded text-sm font-bold transition-colors",
-                    activeFormats.bold
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    "flex items-center justify-center w-7 h-7 rounded transition-colors",
+                    activeFormats.bold ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                   title="Bold (⌘B)"
                 >
@@ -355,19 +429,82 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                   onMouseDown={e => { e.preventDefault(); applyFormat("italic"); }}
                   className={cn(
                     "flex items-center justify-center w-7 h-7 rounded transition-colors",
-                    activeFormats.italic
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    activeFormats.italic ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                   title="Italic (⌘I)"
                 >
                   <Italic className="w-3.5 h-3.5" />
                 </button>
+
+                <div className="w-px h-4 bg-border mx-1" />
+
+                {/* Link button */}
+                <button
+                  onMouseDown={e => { e.preventDefault(); openLinkInput(); }}
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded transition-colors",
+                    activeFormats.link ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Hyperlink (⌘K)"
+                >
+                  <Link className="w-3.5 h-3.5" />
+                </button>
+                {activeFormats.link && (
+                  <button
+                    onMouseDown={e => { e.preventDefault(); removeLink(); }}
+                    className="flex items-center justify-center w-7 h-7 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    title="Remove link"
+                  >
+                    <Link2Off className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
                 <div className="w-px h-4 bg-border mx-1" />
                 <p className="text-xs text-muted-foreground ml-auto">
                   {format(new Date(selectedNote.updated_at), "MMM d, yyyy 'at' h:mm a")}
                 </p>
               </div>
+
+              {/* Link URL input bar */}
+              <AnimatePresence>
+                {showLinkInput && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="overflow-hidden border-b border-border/40"
+                  >
+                    <div className="flex items-center gap-2 px-6 py-2 bg-muted/20">
+                      <Link className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <input
+                        ref={linkInputRef}
+                        type="url"
+                        value={linkUrl}
+                        onChange={e => setLinkUrl(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { e.preventDefault(); applyLink(); }
+                          if (e.key === "Escape") { setShowLinkInput(false); contentRef.current?.focus(); }
+                        }}
+                        placeholder="https://..."
+                        className="flex-1 bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground/50"
+                      />
+                      <button
+                        onMouseDown={e => { e.preventDefault(); applyLink(); }}
+                        className="px-2.5 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary/90 transition-colors"
+                      >
+                        Apply
+                      </button>
+                      <button
+                        onMouseDown={e => { e.preventDefault(); setShowLinkInput(false); contentRef.current?.focus(); }}
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Title */}
               <div className="px-8 pt-5 pb-2">
@@ -392,8 +529,9 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                   onKeyUp={updateFormatState}
                   onMouseUp={updateFormatState}
                   onSelect={updateFormatState}
+                  onClick={handleEditorClick}
                   data-placeholder="Start typing…"
-                  className="w-full min-h-[400px] bg-transparent outline-none text-foreground text-sm leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
+                  className="w-full min-h-[400px] bg-transparent outline-none text-foreground text-sm leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40 [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer"
                 />
               </div>
             </>
