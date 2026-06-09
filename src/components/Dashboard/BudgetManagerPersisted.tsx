@@ -41,10 +41,8 @@ const BudgetManagerPersisted = ({
   // Local editing state — only synced to DB on blur
   const [localEdits, setLocalEdits] = useState<LocalEdits>({});
 
-  const totalEstimated = items.reduce((sum, item) => sum + item.estimated_cost, 0);
   const totalActual = items.reduce((sum, item) => sum + item.actual_cost, 0);
-  const remaining = totalBudget - totalEstimated;
-  const budgetUsedPercent = totalBudget > 0 ? Math.min((totalEstimated / totalBudget) * 100, 100) : 0;
+  const budgetUsedPercent = totalBudget > 0 ? Math.min((totalActual / totalBudget) * 100, 100) : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -158,27 +156,19 @@ const BudgetManagerPersisted = ({
       transition={{ delay: 0.2 }}
       className="space-y-4"
     >
-      {/* Compact Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl border border-border p-3">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
             <DollarSign className="w-3 h-3" />
             Budget
           </div>
-          <span className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</span>
+          <span className="text-2xl font-bold text-foreground">{formatCurrency(totalBudget)}</span>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3">
-          <div className="text-muted-foreground text-xs mb-1">Estimated</div>
-          <span className="text-lg font-bold text-foreground">{formatCurrency(totalEstimated)}</span>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3">
-          <div className="text-muted-foreground text-xs mb-1">Actual</div>
-          <span className="text-lg font-bold text-green-600">{formatCurrency(totalActual)}</span>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3">
-          <div className="text-muted-foreground text-xs mb-1">Remaining</div>
-          <span className={cn("text-lg font-bold", remaining >= 0 ? "text-green-600" : "text-destructive")}>
-            {formatCurrency(remaining)}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="text-muted-foreground text-xs mb-1">Actual Spend</div>
+          <span className={cn("text-2xl font-bold", totalActual > totalBudget ? "text-destructive" : "text-green-600")}>
+            {formatCurrency(totalActual)}
           </span>
         </div>
       </div>
