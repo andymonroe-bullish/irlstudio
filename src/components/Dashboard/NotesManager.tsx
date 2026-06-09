@@ -132,8 +132,9 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   });
 
   const previewText = (content: string) => {
-    const first = content.split("\n").find(l => l.trim()) || "";
-    return first.length > 60 ? first.slice(0, 60) + "…" : first;
+    // Strip HTML tags to get plain text for preview
+    const plain = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    return plain.length > 60 ? plain.slice(0, 60) + "…" : plain;
   };
 
   if (loading) {
