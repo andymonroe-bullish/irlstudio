@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote, Paperclip } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
@@ -16,8 +17,17 @@ interface EventDashboardPersistedProps {
 
 type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes" | "files";
 
+const VALID_VIEWS: DashboardView[] = ["tasks", "budget", "projections", "itinerary", "notes", "files"];
+
 const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
-  const [activeView, setActiveView] = useState<DashboardView>("tasks");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as DashboardView | null;
+  const activeView: DashboardView = tabParam && VALID_VIEWS.includes(tabParam) ? tabParam : "tasks";
+
+  const setActiveView = (view: DashboardView) => {
+    setSearchParams({ tab: view }, { replace: true });
+  };
+
   const eventData = useEventData(event.id);
 
   const tabs = [
