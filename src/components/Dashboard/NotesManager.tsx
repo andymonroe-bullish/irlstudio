@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Folder, FolderOpen, FileText, Trash2, Search, Edit2, Check, X, Bold, Italic, Link, Link2Off } from "lucide-react";
+import { Plus, Folder, FolderOpen, FileText, Trash2, Search, Edit2, Check, X, Bold, Italic, Link, Link2Off, List, ListOrdered } from "lucide-react";
 import { useNotes, NoteFolder, Note } from "@/hooks/useNotes";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   const titleRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
-  const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, link: false });
+  const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, link: false, bulletList: false, orderedList: false });
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
 
@@ -78,10 +78,12 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
     const sel = window.getSelection();
     const isLink = !!(sel?.anchorNode && (sel.anchorNode as Element).closest?.("a") ||
       (sel?.anchorNode?.parentElement as Element)?.closest?.("a"));
-    setActiveFormats({ bold: isBold, italic: isItalic, link: isLink });
+    const isBulletList = document.queryCommandState("insertUnorderedList");
+    const isOrderedList = document.queryCommandState("insertOrderedList");
+    setActiveFormats({ bold: isBold, italic: isItalic, link: isLink, bulletList: isBulletList, orderedList: isOrderedList });
   };
 
-  const applyFormat = (command: "bold" | "italic") => {
+  const applyFormat = (command: "bold" | "italic" | "insertUnorderedList" | "insertOrderedList") => {
     contentRef.current?.focus();
     document.execCommand(command, false);
     updateFormatState();
@@ -150,7 +152,9 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
   const handleEditorClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const anchor = target.closest("a") as HTMLAnchorElement | null;
-    if (anchor && (e.metaKey || e.ctrlKey || e.altKey)) {
+    // Open on a simple click; skip if the user is drag-selecting link text to edit it
+    const hasSelection = !window.getSelection()?.isCollapsed;
+    if (anchor?.href && !hasSelection) {
       e.preventDefault();
       window.open(anchor.href, "_blank", "noopener,noreferrer");
     }
@@ -460,6 +464,30 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                 )}
 
                 <div className="w-px h-4 bg-border mx-1" />
+
+                {/* Lists */}
+                <button
+                  onMouseDown={e => { e.preventDefault(); applyFormat("insertUnorderedList"); }}
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded transition-colors",
+                    activeFormats.bulletList ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Bulleted list"
+                >
+                  <List className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onMouseDown={e => { e.preventDefault(); applyFormat("insertOrderedList"); }}
+                  className={cn(
+                    "flex items-center justify-center w-7 h-7 rounded transition-colors",
+                    activeFormats.orderedList ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Numbered list"
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="w-px h-4 bg-border mx-1" />
                 <p className="text-xs text-muted-foreground ml-auto">
                   {format(new Date(selectedNote.updated_at), "MMM d, yyyy 'at' h:mm a")}
                 </p>
@@ -531,7 +559,7 @@ const NotesManager = ({ eventId }: NotesManagerProps) => {
                   onSelect={updateFormatState}
                   onClick={handleEditorClick}
                   data-placeholder="Start typing…"
-                  className="w-full min-h-[400px] bg-transparent outline-none text-foreground text-sm leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40 [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer"
+                  className="w-full min-h-[400px] bg-transparent outline-none text-foreground text-sm leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40 [&_a]:text-primary [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-0.5"
                 />
               </div>
             </>
