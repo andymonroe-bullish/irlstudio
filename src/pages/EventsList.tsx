@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Calendar, DollarSign, Trash2, LogOut, Pencil, Check, X } from "lucide-react";
+import { Plus, Calendar, DollarSign, Trash2, LogOut, Pencil, Check, X, Settings as SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEvents, Event } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InviteCollaboratorDialog } from "@/components/InviteCollaboratorDialog";
@@ -185,6 +186,8 @@ const EventsList = () => {
   const navigate = useNavigate();
   const { events, loading, deleteEvent, updateEventName, refetch } = useEvents();
   const { user, signOut } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
+  const needsName = !profileLoading && profile !== null && !profile.full_name?.trim();
 
   const handleInvitationAccepted = useCallback(() => {
     // Refresh events list when an invitation is accepted
@@ -226,12 +229,31 @@ const EventsList = () => {
               <span className="hidden sm:inline">Create New Event</span>
               <span className="sm:hidden">New</span>
             </Button>
+            <Button variant="outline" onClick={() => navigate("/settings")} size="sm" className="gap-2">
+              <SettingsIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </Button>
             <Button variant="outline" onClick={handleLogout} size="sm" className="gap-2">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
+
+        {/* Prompt to set a name so teammates can assign tasks to you */}
+        {needsName && (
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm">
+              <SettingsIcon className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className="text-foreground">
+                Add your name so teammates can assign you to tasks.
+              </span>
+            </div>
+            <Button size="sm" onClick={() => navigate("/settings")} className="flex-shrink-0">
+              Add your name
+            </Button>
+          </div>
+        )}
 
         {/* Pending Invitations Banner */}
         <PendingInvitationsBanner onAccepted={handleInvitationAccepted} />

@@ -7,15 +7,17 @@ import TaskItem from "./TaskItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Task as TaskData } from "@/hooks/useEvents";
+import { EventMember } from "@/hooks/useEventMembers";
 import { format, parseISO } from "date-fns";
 
 interface PhaseSectionProps {
   phase: Phase;
   tasksData: TaskData[];
+  members: EventMember[];
   isExpanded: boolean;
   onToggle: () => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onAssigneeChange: (taskId: string, assignee: string) => void;
+  onAssigneeToggle: (taskId: string, userId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onAddTask: (title: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<TaskData>) => Promise<void>;
@@ -26,10 +28,11 @@ interface PhaseSectionProps {
 const PhaseSection = ({
   phase,
   tasksData,
+  members,
   isExpanded,
   onToggle,
   onStatusChange,
-  onAssigneeChange,
+  onAssigneeToggle,
   onDeleteTask,
   onAddTask,
   onUpdateTask,
@@ -181,8 +184,9 @@ const PhaseSection = ({
                         taskData={taskData}
                         index={index}
                         phaseColor={phase.color}
+                        members={members}
                         onStatusChange={onStatusChange}
-                        onAssigneeChange={onAssigneeChange}
+                        onAssigneeToggle={onAssigneeToggle}
                         onDelete={onDeleteTask}
                         onUpdateTask={onUpdateTask}
                       />

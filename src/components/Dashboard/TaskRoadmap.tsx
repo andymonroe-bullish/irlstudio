@@ -34,18 +34,19 @@ const TaskRoadmap = ({ initialPhases }: TaskRoadmapProps) => {
     );
   };
 
-  const handleAssigneeChange = (phaseId: string, taskId: string, assignee: string) => {
+  const handleAssigneeToggle = (taskId: string, userId: string) => {
     setPhases((prev) =>
-      prev.map((phase) =>
-        phase.id === phaseId
-          ? {
-              ...phase,
-              tasks: phase.tasks.map((task) =>
-                task.id === taskId ? { ...task, assignee } : task
-              ),
-            }
-          : phase
-      )
+      prev.map((phase) => ({
+        ...phase,
+        tasks: phase.tasks.map((task) => {
+          if (task.id !== taskId) return task;
+          const current = task.assigneeIds || [];
+          const next = current.includes(userId)
+            ? current.filter((id) => id !== userId)
+            : [...current, userId];
+          return { ...task, assigneeIds: next };
+        }),
+      }))
     );
   };
 
@@ -139,7 +140,7 @@ const TaskRoadmap = ({ initialPhases }: TaskRoadmapProps) => {
               phase_id: phase.id,
               title: t.title,
               status: t.status,
-              assignee: t.assignee || null,
+              assignee: null,
               due_date: t.dueDate || null,
               sort_order: 0,
             }));
@@ -148,16 +149,18 @@ const TaskRoadmap = ({ initialPhases }: TaskRoadmapProps) => {
                 key={phase.id}
                 phase={phase}
                 tasksData={tasksData}
+                members={[]}
                 isExpanded={expandedPhases.includes(phase.id)}
                 onToggle={() => togglePhase(phase.id)}
                 onStatusChange={(taskId, status) =>
                   handleStatusChange(phase.id, taskId, status)
                 }
-                onAssigneeChange={(taskId, assignee) =>
-                  handleAssigneeChange(phase.id, taskId, assignee)
-                }
+                onAssigneeToggle={handleAssigneeToggle}
                 onDeleteTask={(taskId) => handleDeleteTask(phase.id, taskId)}
                 onAddTask={(title) => handleAddTask(phase.id, title)}
+                onUpdateTask={async () => {}}
+                phaseDueDate={null}
+                onUpdatePhaseDueDate={() => {}}
               />
             );
           })}

@@ -1,12 +1,16 @@
 import { useState, useMemo } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { Task } from "@/hooks/useEvents";
+import { EventMember } from "@/hooks/useEventMembers";
 import { Phase, TaskStatus } from "./types";
 import PhaseSection from "./PhaseSection";
 
 interface TaskRoadmapPersistedProps {
   tasks: Task[];
+  members: EventMember[];
+  taskAssignees: Record<string, string[]>;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onUpdateTaskAssignees: (taskId: string, userIds: string[]) => Promise<void>;
   onAddTask: (phaseId: string, title: string) => Promise<void>;
   onDeleteTask: (taskId: string) => Promise<void>;
   onReorderTasks: (tasks: Task[]) => Promise<void>;
@@ -24,7 +28,10 @@ const PHASE_CONFIG = [
 
 const TaskRoadmapPersisted = ({
   tasks,
+  members,
+  taskAssignees,
   onUpdateTask,
+  onUpdateTaskAssignees,
   onAddTask,
   onDeleteTask,
   onReorderTasks,
@@ -47,11 +54,11 @@ const TaskRoadmapPersisted = ({
           id: t.id,
           title: t.title,
           status: t.status as TaskStatus,
-          assignee: t.assignee || undefined,
+          assigneeIds: taskAssignees[t.id] || [],
           dueDate: t.due_date || undefined,
         })),
     }));
-  }, [tasks]);
+  }, [tasks, taskAssignees]);
 
   const togglePhase = (phaseId: string) => {
     setExpandedPhases((prev) =>
@@ -65,8 +72,12 @@ const TaskRoadmapPersisted = ({
     onUpdateTask(taskId, { status });
   };
 
-  const handleAssigneeChange = (phaseId: string, taskId: string, assignee: string) => {
-    onUpdateTask(taskId, { assignee: assignee || null });
+  const handleAssigneeToggle = (taskId: string, userId: string) => {
+    const current = taskAssignees[taskId] || [];
+    const next = current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId];
+    onUpdateTaskAssignees(taskId, next);
   };
 
   const handleDeleteTask = (phaseId: string, taskId: string) => {
@@ -166,14 +177,13 @@ const TaskRoadmapPersisted = ({
               key={phase.id}
               phase={phase}
               tasksData={tasks}
+              members={members}
               isExpanded={expandedPhases.includes(phase.id)}
               onToggle={() => togglePhase(phase.id)}
               onStatusChange={(taskId, status) =>
                 handleStatusChange(phase.id, taskId, status)
               }
-              onAssigneeChange={(taskId, assignee) =>
-                handleAssigneeChange(phase.id, taskId, assignee)
-              }
+              onAssigneeToggle={handleAssigneeToggle}
               onDeleteTask={(taskId) => handleDeleteTask(phase.id, taskId)}
               onAddTask={(title) => handleAddTask(phase.id, title)}
               onUpdateTask={onUpdateTask}

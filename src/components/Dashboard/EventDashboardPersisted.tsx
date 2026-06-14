@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote, Paperclip } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
+import { useEventMembers } from "@/hooks/useEventMembers";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
 import BudgetManagerPersisted from "./BudgetManagerPersisted";
@@ -29,6 +30,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
   };
 
   const eventData = useEventData(event.id);
+  const { members } = useEventMembers(event.id);
 
   const tabs = [
     { id: "tasks" as DashboardView, label: "Tasks", icon: ListTodo },
@@ -88,7 +90,10 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         {activeView === "tasks" && (
           <TaskRoadmapPersisted
             tasks={eventData.tasks}
+            members={members}
+            taskAssignees={eventData.taskAssignees}
             onUpdateTask={eventData.updateTask}
+            onUpdateTaskAssignees={eventData.updateTaskAssignees}
             onAddTask={eventData.addTask}
             onDeleteTask={eventData.deleteTask}
             onReorderTasks={eventData.reorderTasks}

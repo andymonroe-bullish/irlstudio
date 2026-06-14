@@ -8,19 +8,23 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SubTaskList from "./SubTaskList";
 import TaskDetailModal from "./TaskDetailModal";
 import { Task as TaskData } from "@/hooks/useEvents";
+import { EventMember, memberLabel, memberInitials } from "@/hooks/useEventMembers";
 
 interface TaskItemProps {
   task: Task;
   taskData: TaskData;
   index: number;
   phaseColor: string;
+  members: EventMember[];
   onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onAssigneeChange: (taskId: string, assignee: string) => void;
+  onAssigneeToggle: (taskId: string, userId: string) => void;
   onDelete: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<TaskData>) => Promise<void>;
 }
@@ -43,15 +47,14 @@ const statusConfig = {
   },
 };
 
-const teamMembers = ["Alex", "Jordan", "Sam", "Taylor", "Morgan"];
-
 const TaskItem = ({
   task,
   taskData,
   index,
   phaseColor,
+  members,
   onStatusChange,
-  onAssigneeChange,
+  onAssigneeToggle,
   onDelete,
   onUpdateTask,
 }: TaskItemProps) => {
@@ -200,40 +203,85 @@ const TaskItem = ({
                 )}
               </div>
 
-              {/* Assignee - Hidden on mobile */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    onClick={(e) => e.stopPropagation()}
-                    className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md hover:bg-secondary transition-colors"
-                  >
-                    {task.assignee ? (
-                      <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
-                        {task.assignee.charAt(0)}
-                      </span>
-                    ) : (
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card border-border">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAssigneeChange(task.id, ""); }}>
-                    <User className="w-4 h-4 mr-2 text-muted-foreground" />
-                    Unassigned
-                  </DropdownMenuItem>
-                  {teamMembers.map((member) => (
-                    <DropdownMenuItem
-                      key={member}
-                      onClick={(e) => { e.stopPropagation(); onAssigneeChange(task.id, member); }}
-                    >
-                      <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium mr-2">
-                        {member.charAt(0)}
-                      </span>
-                      {member}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Assignees - Hidden on mobile */}
+              {(() => {
+                const assignedIds = task.assigneeIds || [];
+                const assignedMembers = members.filter((m) => assignedIds.includes(m.userId));
+                const shown = assignedMembers.slice(0, 3);
+                const extra = assignedMembers.length - shown.length;
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="hidden sm:flex items-center px-2 py-1 rounded-md hover:bg-secondary transition-colors"
+                        title={
+                          assignedMembers.length > 0
+                            ? assignedMembers.map((m) => memberLabel(m)).join(", ")
+                            : "Assign people"
+                        }
+                      >
+                        {assignedMembers.length > 0 ? (
+                          <span className="flex items-center -space-x-1.5">
+                            {shown.map((m) => (
+                              <span
+                                key={m.userId}
+                                className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium ring-2 ring-card"
+                              >
+                                {memberInitials(m)}
+                              </span>
+                            ))}
+                            {extra > 0 && (
+                              <span className="w-6 h-6 rounded-full bg-muted text-muted-foreground text-[10px] flex items-center justify-center font-medium ring-2 ring-card">
+                                +{extra}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-card border-border w-56">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        Assign to
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {members.length === 0 ? (
+                        <div className="px-2 py-3 text-xs text-muted-foreground">
+                          No one to assign yet. Invite collaborators to this event.
+                        </div>
+                      ) : (
+                        members.map((member) => {
+                          const isAssigned = assignedIds.includes(member.userId);
+                          return (
+                            <DropdownMenuItem
+                              key={member.userId}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onAssigneeToggle(task.id, member.userId);
+                              }}
+                              className="gap-2"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium flex-shrink-0">
+                                {memberInitials(member)}
+                              </span>
+                              <span className="flex-1 truncate">
+                                {memberLabel(member)}
+                                {member.isOwner && (
+                                  <span className="text-muted-foreground"> (owner)</span>
+                                )}
+                              </span>
+                              {isAssigned && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                            </DropdownMenuItem>
+                          );
+                        })
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
 
               {/* Status Badge */}
               <DropdownMenu>

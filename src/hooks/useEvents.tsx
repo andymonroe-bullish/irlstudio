@@ -171,7 +171,6 @@ export const useEvents = () => {
           phase_id: phase.id,
           title: task.title,
           status: task.status,
-          assignee: task.assignee || null,
           due_date: task.dueDate || null,
           sort_order: phaseIndex * 100 + taskIndex,
           created_by: user.id,
@@ -252,6 +251,8 @@ export const useEventData = (eventId: string) => {
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [revenueStreams, setRevenueStreams] = useState<RevenueStream[]>([]);
   const [phaseDueDates, setPhaseDueDates] = useState<Record<string, string>>({});
+  // Map of task id -> assigned user ids (supports multiple assignees per task)
+  const [taskAssignees, setTaskAssignees] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -276,6 +277,20 @@ export const useEventData = (eventId: string) => {
       if (eventRes.data?.phase_due_dates) {
         setPhaseDueDates(eventRes.data.phase_due_dates as Record<string, string>);
       }
+
+      // Load task assignees for all of this event's tasks
+      const taskIds = (tasksRes.data || []).map((t) => t.id);
+      const assigneeMap: Record<string, string[]> = {};
+      if (taskIds.length > 0) {
+        const { data: assigneeRows } = await supabase
+          .from("task_assignees")
+          .select("task_id, user_id")
+          .in("task_id", taskIds);
+        for (const row of (assigneeRows || []) as { task_id: string; user_id: string }[]) {
+          (assigneeMap[row.task_id] ||= []).push(row.user_id);
+        }
+      }
+      setTaskAssignees(assigneeMap);
     } catch (error: any) {
       toast({ title: "Error fetching event data", description: error.message, variant: "destructive" });
     } finally {
@@ -307,6 +322,37 @@ export const useEventData = (eventId: string) => {
     }
   };
 
+  // Set the full list of assignees for a task (diffs against current state)
+  const updateTaskAssignees = async (taskId: string, userIds: string[]) => {
+    const current = taskAssignees[taskId] || [];
+    const toAdd = userIds.filter(id => !current.includes(id));
+    const toRemove = current.filter(id => !userIds.includes(id));
+    if (toAdd.length === 0 && toRemove.length === 0) return;
+
+    // Optimistic update
+    setTaskAssignees(prev => ({ ...prev, [taskId]: userIds }));
+    try {
+      if (toAdd.length > 0) {
+        const { error } = await supabase
+          .from("task_assignees")
+          .insert(toAdd.map(uid => ({ task_id: taskId, user_id: uid })));
+        if (error) throw error;
+      }
+      if (toRemove.length > 0) {
+        const { error } = await supabase
+          .from("task_assignees")
+          .delete()
+          .eq("task_id", taskId)
+          .in("user_id", toRemove);
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      // Revert on failure
+      setTaskAssignees(prev => ({ ...prev, [taskId]: current }));
+      toast({ title: "Error updating assignees", description: error.message, variant: "destructive" });
+    }
+  };
+
   const addTask = async (phaseId: string, title: string) => {
     try {
       const maxOrder = Math.max(...tasks.filter(t => t.phase_id === phaseId).map(t => t.sort_order), 0);
@@ -326,6 +372,11 @@ export const useEventData = (eventId: string) => {
       const { error } = await supabase.from("tasks").delete().eq("id", taskId);
       if (error) throw error;
       setTasks(prev => prev.filter(t => t.id !== taskId));
+      setTaskAssignees(prev => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
     } catch (error: any) {
       toast({ title: "Error deleting task", description: error.message, variant: "destructive" });
     }
@@ -422,8 +473,9 @@ export const useEventData = (eventId: string) => {
   };
 
   return {
-    tasks, budgetItems, revenueStreams, phaseDueDates, loading,
+    tasks, budgetItems, revenueStreams, phaseDueDates, taskAssignees, loading,
     updateTask, addTask, deleteTask, reorderTasks, updatePhaseDueDate,
+    updateTaskAssignees,
     updateBudgetItem, addBudgetItem, deleteBudgetItem, reorderBudgetItems,
     updateRevenueStream, addRevenueStream, deleteRevenueStream,
     refetch: fetchEventData,

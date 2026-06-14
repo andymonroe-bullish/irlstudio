@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import EventsList from "./pages/EventsList";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetail from "./pages/EventDetail";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthConfirmed from "./pages/AuthConfirmed";
@@ -41,6 +42,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreateEvent />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />
