@@ -404,11 +404,14 @@ export const useEventData = (eventId: string) => {
   };
 
   const addBudgetItem = async (item: Omit<BudgetItem, "id" | "event_id" | "sort_order">) => {
+    if (!user) return;
     try {
       const maxOrder = Math.max(...budgetItems.map(i => i.sort_order), 0);
       const { data, error } = await supabase
         .from("budget_items")
-        .insert({ event_id: eventId, ...item, sort_order: maxOrder + 1 })
+        // created_by is required by the budget_items INSERT row-level-security
+        // policy (auth.uid() = created_by), so it must be set explicitly.
+        .insert({ event_id: eventId, ...item, created_by: user.id, sort_order: maxOrder + 1 })
         .select().single();
       if (error) throw error;
       setBudgetItems(prev => [...prev, data]);
