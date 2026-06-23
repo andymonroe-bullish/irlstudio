@@ -255,6 +255,7 @@ export const useEventData = (eventId: string) => {
   const [taskAssignees, setTaskAssignees] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchEventData = useCallback(async () => {
     if (!eventId) return;
