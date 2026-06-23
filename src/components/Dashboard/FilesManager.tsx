@@ -68,11 +68,13 @@ const formatBytes = (bytes: number | null): string => {
 };
 
 const FilesManager = ({ eventId }: FilesManagerProps) => {
-  const { files, links, loading, uploading, uploadFile, deleteFile, downloadFile, addLink, deleteLink } = useEventFiles(eventId);
+  const { files, links, loading, uploading, uploadFile, deleteFile, downloadFile, getSignedUrl, renameFile, addLink, updateLink, deleteLink } = useEventFiles(eventId);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadCategory, setUploadCategory] = useState("other");
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editingFileName, setEditingFileName] = useState("");
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkForm, setLinkForm] = useState({ title: "", url: "" });
   const [linkFormError, setLinkFormError] = useState("");
@@ -83,6 +85,24 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
     for (const file of Array.from(fileList)) {
       await uploadFile(file, uploadCategory);
     }
+  };
+
+  const handleViewFile = async (filePath: string) => {
+    // Open the tab synchronously so it isn't blocked by the popup blocker,
+    // then point it at the signed URL once we have one.
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+    const url = await getSignedUrl(filePath);
+    if (!url) {
+      tab?.close();
+      return;
+    }
+    if (tab) tab.location.href = url;
+    else window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const saveFileName = (fileId: string, fallback: string) => {
+    renameFile(fileId, editingFileName.trim() || fallback);
+    setEditingFileId(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -199,7 +219,27 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
                   <FileIcon fileType={file.file_type} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                  {editingFileId === file.id ? (
+                    <input
+                      autoFocus
+                      value={editingFileName}
+                      onChange={e => setEditingFileName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") saveFileName(file.id, file.name);
+                        if (e.key === "Escape") setEditingFileId(null);
+                      }}
+                      onBlur={() => saveFileName(file.id, file.name)}
+                      className="w-full text-sm font-medium bg-background border border-primary rounded px-2 py-0.5 outline-none"
+                    />
+                  ) : (
+                    <p
+                      className="text-sm font-medium text-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => { setEditingFileId(file.id); setEditingFileName(file.name); }}
+                      title="Click to rename"
+                    >
+                      {file.name}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                     <span className="capitalize px-1.5 py-0.5 bg-muted rounded text-[10px] font-medium">{file.category}</span>
                     {file.file_size && <span>{formatBytes(file.file_size)}</span>}
@@ -207,6 +247,13 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleViewFile(file.file_path)}
+                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="View in new tab"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => downloadFile(file.file_path, file.name)}
                     className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"

@@ -109,6 +109,31 @@ export const useEventFiles = (eventId: string) => {
     return data.publicUrl;
   };
 
+  const renameFile = async (fileId: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    try {
+      const { error } = await supabase.from("event_files").update({ name: trimmed }).eq("id", fileId);
+      if (error) throw error;
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, name: trimmed } : f));
+    } catch (error: any) {
+      toast({ title: "Error renaming file", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const getSignedUrl = async (filePath: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("event-files")
+        .createSignedUrl(filePath, 60 * 60);
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast({ title: "Couldn't open file", description: error.message, variant: "destructive" });
+      return null;
+    }
+  };
+
   const downloadFile = async (filePath: string, fileName: string) => {
     try {
       const { data, error } = await supabase.storage.from("event-files").download(filePath);
@@ -163,7 +188,7 @@ export const useEventFiles = (eventId: string) => {
 
   return {
     files, links, loading, uploading,
-    uploadFile, deleteFile, getFileUrl, downloadFile,
+    uploadFile, deleteFile, getFileUrl, getSignedUrl, downloadFile, renameFile,
     addLink, updateLink, deleteLink,
   };
 };
