@@ -48,6 +48,13 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
     )
   );
 
+  // The overall budget is the live sum of every line item's estimated cost,
+  // so editing an estimate immediately updates the Budget total (and Projections).
+  const estimatedBudgetTotal = eventData.budgetItems.reduce(
+    (sum, item) => sum + (item.estimated_cost || 0),
+    0
+  );
+
   if (eventData.loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -104,7 +111,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         )}
         {activeView === "budget" && (
           <BudgetManagerPersisted
-            totalBudget={event.total_budget}
+            totalBudget={estimatedBudgetTotal}
             items={eventData.budgetItems}
             onUpdateItem={eventData.updateBudgetItem}
             onAddItem={eventData.addBudgetItem}
@@ -114,7 +121,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         )}
         {activeView === "projections" && (
           <ProjectionsManagerPersisted
-            totalBudget={event.total_budget}
+            totalBudget={estimatedBudgetTotal}
             streams={eventData.revenueStreams}
             onUpdateStream={eventData.updateRevenueStream}
             onAddStream={eventData.addRevenueStream}

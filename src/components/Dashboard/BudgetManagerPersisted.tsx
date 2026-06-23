@@ -210,7 +210,7 @@ const BudgetManagerPersisted = ({
         </div>
 
         {/* Items */}
-        <div className="max-h-[320px] overflow-y-auto">
+        <div>
           {items.map((item) => (
             <div
               key={item.id}
