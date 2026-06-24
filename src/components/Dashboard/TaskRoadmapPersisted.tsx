@@ -9,6 +9,7 @@ interface TaskRoadmapPersistedProps {
   tasks: Task[];
   members: EventMember[];
   taskAssignees: Record<string, string[]>;
+  taskCommentCounts: Record<string, number>;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onUpdateTaskAssignees: (taskId: string, userIds: string[]) => Promise<void>;
   onAddTask: (phaseId: string, title: string) => Promise<void>;
@@ -30,6 +31,7 @@ const TaskRoadmapPersisted = ({
   tasks,
   members,
   taskAssignees,
+  taskCommentCounts,
   onUpdateTask,
   onUpdateTaskAssignees,
   onAddTask,
@@ -178,6 +180,7 @@ const TaskRoadmapPersisted = ({
               phase={phase}
               tasksData={tasks}
               members={members}
+              taskCommentCounts={taskCommentCounts}
               isExpanded={expandedPhases.includes(phase.id)}
               onToggle={() => togglePhase(phase.id)}
               onStatusChange={(taskId, status) =>

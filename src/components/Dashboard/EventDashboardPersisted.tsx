@@ -99,6 +99,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
             tasks={eventData.tasks}
             members={members}
             taskAssignees={eventData.taskAssignees}
+            taskCommentCounts={eventData.taskCommentCounts}
             onUpdateTask={eventData.updateTask}
             onUpdateTaskAssignees={eventData.updateTaskAssignees}
             onAddTask={eventData.addTask}

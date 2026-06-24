@@ -1,9 +1,11 @@
 import { useState, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Check, Circle, Clock, Trash2, User, ChevronDown, MoreHorizontal, CalendarDays, X } from "lucide-react";
+import { Check, Circle, Clock, Trash2, User, ChevronDown, MoreHorizontal, CalendarDays, X, MessageSquare } from "lucide-react";
 import { Task, TaskStatus } from "./types";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isPast } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { TaskComment } from "@/hooks/useTaskDetails";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,7 @@ interface TaskItemProps {
   index: number;
   phaseColor: string;
   members: EventMember[];
+  commentCount: number;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onAssigneeToggle: (taskId: string, userId: string) => void;
   onDelete: (taskId: string) => void;
@@ -53,6 +56,7 @@ const TaskItem = ({
   index,
   phaseColor,
   members,
+  commentCount,
   onStatusChange,
   onAssigneeToggle,
   onDelete,
@@ -64,6 +68,34 @@ const TaskItem = ({
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline comments preview (read-only). Lazily loaded on first expand.
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [comments, setComments] = useState<TaskComment[] | null>(null);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  // Prefer the freshly-loaded count once we have it, else the event-level count.
+  const displayCommentCount = comments ? comments.length : commentCount;
+
+  const authorLabel = (userId: string) => {
+    const m = members.find((mm) => mm.userId === userId);
+    return m?.email || m?.fullName || "Unknown";
+  };
+
+  const toggleComments = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !commentsExpanded;
+    setCommentsExpanded(next);
+    if (next && comments === null) {
+      setCommentsLoading(true);
+      const { data } = await supabase
+        .from("task_comments")
+        .select("*")
+        .eq("task_id", task.id)
+        .order("created_at", { ascending: true });
+      setComments((data as TaskComment[]) || []);
+      setCommentsLoading(false);
+    }
+  };
 
   const hasDate = !!taskData.due_date;
   const isOverdue = hasDate && task.status !== "completed" && isPast(parseISO(taskData.due_date!));
@@ -268,7 +300,7 @@ const TaskItem = ({
                                 {memberInitials(member)}
                               </span>
                               <span className="flex-1 truncate">
-                                {memberLabel(member)}
+                                {member.email || memberLabel(member)}
                                 {member.isOwner && (
                                   <span className="text-muted-foreground"> (owner)</span>
                                 )}
@@ -282,6 +314,23 @@ const TaskItem = ({
                   </DropdownMenu>
                 );
               })()}
+
+              {/* Comment count — click to expand inline */}
+              {displayCommentCount > 0 && (
+                <button
+                  onClick={toggleComments}
+                  className={cn(
+                    "flex items-center gap-1 text-xs px-1.5 py-1 rounded-md transition-colors flex-shrink-0",
+                    commentsExpanded
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                  title={`${displayCommentCount} comment${displayCommentCount === 1 ? "" : "s"}`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  {displayCommentCount}
+                </button>
+              )}
 
               {/* Status Badge */}
               <DropdownMenu>
@@ -338,6 +387,38 @@ const TaskItem = ({
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Inline comments (read-only preview) */}
+            {commentsExpanded && (
+              <div className="ml-7 sm:ml-8 mr-2 mb-2 space-y-2 border-l-2 border-border pl-3">
+                {commentsLoading ? (
+                  <p className="text-xs text-muted-foreground py-1">Loading comments…</p>
+                ) : comments && comments.length > 0 ? (
+                  comments.map((c) => (
+                    <div key={c.id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground truncate">{authorLabel(c.user_id)}</span>
+                        <span className="text-muted-foreground flex-shrink-0">
+                          {format(parseISO(c.created_at), "MMM d, h:mm a")}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground whitespace-pre-wrap mt-0.5">{c.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground py-1">No comments yet.</p>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailModalOpen(true);
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Open task to reply
+                </button>
+              </div>
+            )}
 
             {/* Sub-tasks */}
             <SubTaskList

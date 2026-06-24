@@ -150,6 +150,7 @@ const TaskRoadmap = ({ initialPhases }: TaskRoadmapProps) => {
                 phase={phase}
                 tasksData={tasksData}
                 members={[]}
+                taskCommentCounts={{}}
                 isExpanded={expandedPhases.includes(phase.id)}
                 onToggle={() => togglePhase(phase.id)}
                 onStatusChange={(taskId, status) =>

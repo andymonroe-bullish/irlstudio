@@ -253,6 +253,8 @@ export const useEventData = (eventId: string) => {
   const [phaseDueDates, setPhaseDueDates] = useState<Record<string, string>>({});
   // Map of task id -> assigned user ids (supports multiple assignees per task)
   const [taskAssignees, setTaskAssignees] = useState<Record<string, string[]>>({});
+  // Map of task id -> number of comments on that task
+  const [taskCommentCounts, setTaskCommentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -292,6 +294,19 @@ export const useEventData = (eventId: string) => {
         }
       }
       setTaskAssignees(assigneeMap);
+
+      // Load comment counts for all of this event's tasks
+      const commentCounts: Record<string, number> = {};
+      if (taskIds.length > 0) {
+        const { data: commentRows } = await supabase
+          .from("task_comments")
+          .select("task_id")
+          .in("task_id", taskIds);
+        for (const row of (commentRows || []) as { task_id: string }[]) {
+          commentCounts[row.task_id] = (commentCounts[row.task_id] || 0) + 1;
+        }
+      }
+      setTaskCommentCounts(commentCounts);
     } catch (error: any) {
       toast({ title: "Error fetching event data", description: error.message, variant: "destructive" });
     } finally {
@@ -477,7 +492,7 @@ export const useEventData = (eventId: string) => {
   };
 
   return {
-    tasks, budgetItems, revenueStreams, phaseDueDates, taskAssignees, loading,
+    tasks, budgetItems, revenueStreams, phaseDueDates, taskAssignees, taskCommentCounts, loading,
     updateTask, addTask, deleteTask, reorderTasks, updatePhaseDueDate,
     updateTaskAssignees,
     updateBudgetItem, addBudgetItem, deleteBudgetItem, reorderBudgetItems,

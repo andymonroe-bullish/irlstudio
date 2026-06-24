@@ -14,6 +14,7 @@ interface PhaseSectionProps {
   phase: Phase;
   tasksData: TaskData[];
   members: EventMember[];
+  taskCommentCounts: Record<string, number>;
   isExpanded: boolean;
   onToggle: () => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
@@ -29,6 +30,7 @@ const PhaseSection = ({
   phase,
   tasksData,
   members,
+  taskCommentCounts,
   isExpanded,
   onToggle,
   onStatusChange,
@@ -185,6 +187,7 @@ const PhaseSection = ({
                         index={index}
                         phaseColor={phase.color}
                         members={members}
+                        commentCount={taskCommentCounts[task.id] || 0}
                         onStatusChange={onStatusChange}
                         onAssigneeToggle={onAssigneeToggle}
                         onDelete={onDeleteTask}

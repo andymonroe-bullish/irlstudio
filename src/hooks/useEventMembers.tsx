@@ -46,15 +46,16 @@ export const useEventMembers = (eventId: string) => {
       const collabIds = collaborators.map((c) => c.user_id);
       const allIds = Array.from(new Set([ownerId, ...collabIds].filter(Boolean))) as string[];
 
-      // Resolve names/emails from profiles
+      // Resolve names/emails from profiles.
+      // NOTE: the profiles table is keyed by `id` (= auth user id), not `user_id`.
       const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
       if (allIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id, full_name, email")
-          .in("user_id", allIds);
-        for (const p of (profiles || []) as { user_id: string; full_name: string | null; email: string | null }[]) {
-          profileMap.set(p.user_id, { full_name: p.full_name, email: p.email });
+          .select("id, full_name, email")
+          .in("id", allIds);
+        for (const p of (profiles || []) as { id: string; full_name: string | null; email: string | null }[]) {
+          profileMap.set(p.id, { full_name: p.full_name, email: p.email });
         }
       }
 
