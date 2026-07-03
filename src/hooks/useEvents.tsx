@@ -55,6 +55,14 @@ export interface BudgetItem {
   sort_order: number;
 }
 
+export interface RevenueItem {
+  id: string;
+  event_id: string;
+  name: string;
+  amount: number;
+  sort_order: number;
+}
+
 export interface RevenueStream {
   id: string;
   event_id: string;
@@ -249,6 +257,7 @@ export const useEvents = () => {
 export const useEventData = (eventId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [revenueItems, setRevenueItems] = useState<RevenueItem[]>([]);
   const [revenueStreams, setRevenueStreams] = useState<RevenueStream[]>([]);
   const [phaseDueDates, setPhaseDueDates] = useState<Record<string, string>>({});
   // Map of task id -> assigned user ids (supports multiple assignees per task)
@@ -263,20 +272,23 @@ export const useEventData = (eventId: string) => {
     if (!eventId) return;
     try {
       setLoading(true);
-      const [tasksRes, budgetRes, revenueRes, eventRes] = await Promise.all([
+      const [tasksRes, budgetRes, revenueRes, revenueItemsRes, eventRes] = await Promise.all([
         supabase.from("tasks").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("budget_items").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("revenue_streams").select("*").eq("event_id", eventId).order("sort_order"),
+        supabase.from("revenue_items").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("events").select("phase_due_dates").eq("id", eventId).single(),
       ]);
 
       if (tasksRes.error) throw tasksRes.error;
       if (budgetRes.error) throw budgetRes.error;
       if (revenueRes.error) throw revenueRes.error;
+      if (revenueItemsRes.error) throw revenueItemsRes.error;
 
       setTasks(tasksRes.data || []);
       setBudgetItems(budgetRes.data || []);
       setRevenueStreams(revenueRes.data || []);
+      setRevenueItems(revenueItemsRes.data || []);
       if (eventRes.data?.phase_due_dates) {
         setPhaseDueDates(eventRes.data.phase_due_dates as Record<string, string>);
       }
@@ -370,11 +382,14 @@ export const useEventData = (eventId: string) => {
   };
 
   const addTask = async (phaseId: string, title: string) => {
+    if (!user) return;
     try {
       const maxOrder = Math.max(...tasks.filter(t => t.phase_id === phaseId).map(t => t.sort_order), 0);
       const { data, error } = await supabase
         .from("tasks")
-        .insert({ event_id: eventId, phase_id: phaseId, title, status: "not_started", sort_order: maxOrder + 1 })
+        // created_by is required by the tasks INSERT row-level-security
+        // policy (auth.uid() = created_by), so it must be set explicitly.
+        .insert({ event_id: eventId, phase_id: phaseId, title, status: "not_started", sort_order: maxOrder + 1, created_by: user.id })
         .select().single();
       if (error) throw error;
       setTasks(prev => [...prev, data]);
@@ -457,6 +472,43 @@ export const useEventData = (eventId: string) => {
     }
   };
 
+  const updateRevenueItem = async (itemId: string, updates: Partial<RevenueItem>) => {
+    try {
+      const { error } = await supabase.from("revenue_items").update(updates).eq("id", itemId);
+      if (error) throw error;
+      setRevenueItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updates } : i));
+    } catch (error: any) {
+      toast({ title: "Error updating revenue item", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const addRevenueItem = async (item: Omit<RevenueItem, "id" | "event_id" | "sort_order">) => {
+    if (!user) return;
+    try {
+      const maxOrder = Math.max(...revenueItems.map(i => i.sort_order), 0);
+      const { data, error } = await supabase
+        .from("revenue_items")
+        // created_by is required by the revenue_items INSERT row-level-security
+        // policy (auth.uid() = created_by), so it must be set explicitly.
+        .insert({ event_id: eventId, ...item, created_by: user.id, sort_order: maxOrder + 1 })
+        .select().single();
+      if (error) throw error;
+      setRevenueItems(prev => [...prev, data]);
+    } catch (error: any) {
+      toast({ title: "Error adding revenue item", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const deleteRevenueItem = async (itemId: string) => {
+    try {
+      const { error } = await supabase.from("revenue_items").delete().eq("id", itemId);
+      if (error) throw error;
+      setRevenueItems(prev => prev.filter(i => i.id !== itemId));
+    } catch (error: any) {
+      toast({ title: "Error deleting revenue item", description: error.message, variant: "destructive" });
+    }
+  };
+
   const updateRevenueStream = async (streamId: string, updates: Partial<RevenueStream>) => {
     try {
       const { error } = await supabase.from("revenue_streams").update(updates).eq("id", streamId);
@@ -492,10 +544,11 @@ export const useEventData = (eventId: string) => {
   };
 
   return {
-    tasks, budgetItems, revenueStreams, phaseDueDates, taskAssignees, taskCommentCounts, loading,
+    tasks, budgetItems, revenueItems, revenueStreams, phaseDueDates, taskAssignees, taskCommentCounts, loading,
     updateTask, addTask, deleteTask, reorderTasks, updatePhaseDueDate,
     updateTaskAssignees,
     updateBudgetItem, addBudgetItem, deleteBudgetItem, reorderBudgetItems,
+    updateRevenueItem, addRevenueItem, deleteRevenueItem,
     updateRevenueStream, addRevenueStream, deleteRevenueStream,
     refetch: fetchEventData,
   };

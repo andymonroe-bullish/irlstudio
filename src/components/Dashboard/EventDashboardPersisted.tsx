@@ -114,10 +114,14 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
           <BudgetManagerPersisted
             totalBudget={estimatedBudgetTotal}
             items={eventData.budgetItems}
+            revenueItems={eventData.revenueItems}
             onUpdateItem={eventData.updateBudgetItem}
             onAddItem={eventData.addBudgetItem}
             onDeleteItem={eventData.deleteBudgetItem}
             onReorderItems={eventData.reorderBudgetItems}
+            onUpdateRevenueItem={eventData.updateRevenueItem}
+            onAddRevenueItem={eventData.addRevenueItem}
+            onDeleteRevenueItem={eventData.deleteRevenueItem}
           />
         )}
         {activeView === "projections" && (

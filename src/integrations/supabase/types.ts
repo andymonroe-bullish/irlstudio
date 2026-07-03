@@ -253,6 +253,65 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_items: {
+        Row: {
+          actual_amount: number | null
+          amount: number
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          event_id: string
+          id: string
+          name: string
+          notes: string | null
+          projected_amount: number
+          received: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number | null
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string
+          event_id: string
+          id?: string
+          name?: string
+          notes?: string | null
+          projected_amount?: number
+          received?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number | null
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          event_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          projected_amount?: number
+          received?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_streams: {
         Row: {
           created_at: string
