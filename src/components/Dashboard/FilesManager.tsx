@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, Trash2, Download, ExternalLink, Plus, Link,
   FileText, FileImage, FileSpreadsheet, Presentation, File,
-  X, Check,
+  X, Check, Pencil,
 } from "lucide-react";
 import { useEventFiles } from "@/hooks/useEventFiles";
 import { Button } from "@/components/ui/button";
@@ -248,6 +248,13 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    onClick={() => { setEditingFileId(file.id); setEditingFileName(file.name); }}
+                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Rename"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleViewFile(file.file_path)}
                     className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     title="View in new tab"
@@ -392,6 +399,13 @@ const FilesManager = ({ eventId }: FilesManagerProps) => {
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{link.url}</p>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => { setEditingLinkId(link.id); setEditingLinkTitle(link.title); }}
+                      className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="Rename"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <a
                       href={link.url}
                       target="_blank"
