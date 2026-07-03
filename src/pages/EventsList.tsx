@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Calendar, DollarSign, Trash2, LogOut, Pencil, Check, X, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Calendar, Trash2, LogOut, Pencil, Check, X, Settings as SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEvents, Event } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,15 +34,6 @@ const EventCard = ({
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(event.name || "");
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const eventTypeLabels: Record<string, string> = {
     mastermind: "Mastermind",
@@ -166,10 +157,6 @@ const EventCard = ({
             {format(new Date(event.event_date), "MMM d, yyyy")}
             {event.event_end_date && ` - ${format(new Date(event.event_end_date), "MMM d, yyyy")}`}
           </span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <DollarSign className="w-4 h-4" />
-          <span className="text-sm">{formatCurrency(event.total_budget)} Budget</span>
         </div>
       </div>
 

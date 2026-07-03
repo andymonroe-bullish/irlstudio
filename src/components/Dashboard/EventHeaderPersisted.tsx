@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, DollarSign } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Event } from "@/hooks/useEvents";
 
@@ -14,15 +14,6 @@ const EventHeaderPersisted = ({ event }: EventHeaderPersistedProps) => {
     acquisition: "Acquisition",
     activation: "Activation",
     networking: "Networking",
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   return (
@@ -48,10 +39,6 @@ const EventHeaderPersisted = ({ event }: EventHeaderPersistedProps) => {
               {format(new Date(event.event_date), "MMM d, yyyy")}
               {event.event_end_date && ` - ${format(new Date(event.event_end_date), "MMM d, yyyy")}`}
             </span>
-          </div>
-          <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-xl border border-border">
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{formatCurrency(event.total_budget)}</span>
           </div>
         </div>
       </div>
