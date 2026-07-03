@@ -74,7 +74,16 @@ const Auth = () => {
       } else {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
-        navigate(`/check-email?email=${encodeURIComponent(email)}`);
+        // With email auto-confirm enabled, signup returns a session right away
+        // and the user can go straight in. If confirmation is ever re-enabled,
+        // there is no session yet and we fall back to the check-email page.
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          toast({ title: "Welcome to IRL Event Studio!" });
+          navigate("/");
+        } else {
+          navigate(`/check-email?email=${encodeURIComponent(email)}`);
+        }
       }
     } catch (error: any) {
       toast({
