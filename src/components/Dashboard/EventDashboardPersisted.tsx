@@ -6,6 +6,7 @@ import { Event, useEventData } from "@/hooks/useEvents";
 import { useEventMembers } from "@/hooks/useEventMembers";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
+import PromotionTasksPersisted from "./PromotionTasksPersisted";
 import BudgetManagerPersisted from "./BudgetManagerPersisted";
 import ProjectionsManagerPersisted from "./ProjectionsManagerPersisted";
 import ItineraryManager from "./ItineraryManager";
@@ -17,6 +18,7 @@ interface EventDashboardPersistedProps {
 }
 
 type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes" | "files";
+type TaskSection = "design" | "promotion";
 
 const VALID_VIEWS: DashboardView[] = ["tasks", "budget", "projections", "itinerary", "notes", "files"];
 
@@ -24,9 +26,14 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as DashboardView | null;
   const activeView: DashboardView = tabParam && VALID_VIEWS.includes(tabParam) ? tabParam : "tasks";
+  const taskSection: TaskSection = searchParams.get("section") === "promotion" ? "promotion" : "design";
 
   const setActiveView = (view: DashboardView) => {
     setSearchParams({ tab: view }, { replace: true });
+  };
+
+  const setTaskSection = (section: TaskSection) => {
+    setSearchParams({ tab: "tasks", section }, { replace: true });
   };
 
   const eventData = useEventData(event.id);
@@ -92,9 +99,35 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
         </div>
       </div>
 
+      {/* Tasks sub-toggle: Event Design vs Event Promotion */}
+      {activeView === "tasks" && (
+        <div className="flex items-center justify-center mb-6">
+          <div className="inline-flex items-center bg-muted/50 rounded-full p-1 border border-border">
+            {([
+              { id: "design" as TaskSection, label: "Event Design" },
+              { id: "promotion" as TaskSection, label: "Event Promotion" },
+            ]).map((section) => (
+              <button
+                key={section.id}
+                onClick={() => setTaskSection(section.id)}
+                className={`
+                  px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap
+                  ${taskSection === section.id
+                    ? "bg-card text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 gap-6">
-        {activeView === "tasks" && (
+        {activeView === "tasks" && taskSection === "design" && (
           <TaskRoadmapPersisted
             tasks={eventData.tasks}
             members={members}
@@ -108,6 +141,19 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
             phaseDueDates={eventData.phaseDueDates}
             onUpdatePhaseDueDate={eventData.updatePhaseDueDate}
             daysUntilEvent={daysUntilEvent}
+          />
+        )}
+        {activeView === "tasks" && taskSection === "promotion" && (
+          <PromotionTasksPersisted
+            tasks={eventData.tasks}
+            members={members}
+            taskAssignees={eventData.taskAssignees}
+            taskCommentCounts={eventData.taskCommentCounts}
+            onUpdateTask={eventData.updateTask}
+            onUpdateTaskAssignees={eventData.updateTaskAssignees}
+            onAddTask={eventData.addTask}
+            onDeleteTask={eventData.deleteTask}
+            onReorderTasks={eventData.reorderTasks}
           />
         )}
         {activeView === "budget" && (
