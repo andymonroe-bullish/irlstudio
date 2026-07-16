@@ -1,4 +1,4 @@
-import { authenticate, getAccessibleChild, methodNotAllowed, pick } from "../../_lib/api";
+import { authenticate, getAccessibleChild, methodNotAllowed, pick } from "../../_lib/api.js";
 
 const WRITABLE = [
   "name", "category", "description", "estimated_cost", "actual_cost",

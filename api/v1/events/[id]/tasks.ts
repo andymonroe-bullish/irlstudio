@@ -1,4 +1,4 @@
-import { authenticate, canAccessEvent, methodNotAllowed, pick } from "../../../_lib/api";
+import { authenticate, canAccessEvent, methodNotAllowed, pick } from "../../../_lib/api.js";
 
 const WRITABLE = [
   "title", "description", "status", "priority", "due_date", "category",

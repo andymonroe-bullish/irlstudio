@@ -1,4 +1,4 @@
-import { authenticate, collaboratorEventIds, methodNotAllowed, pick } from "../../_lib/api";
+import { authenticate, collaboratorEventIds, methodNotAllowed, pick } from "../../_lib/api.js";
 
 const WRITABLE = [
   "name", "description", "event_date", "event_end_date", "venue", "venue_address",
