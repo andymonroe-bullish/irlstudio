@@ -1,3 +1,8 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/v1/events/:id/tasks", "destination": "/api/v1/event-tasks?id=:id" },
+    { "source": "/api/v1/events/:id/budget", "destination": "/api/v1/event-budget?id=:id" },
+    { "source": "/api/v1/events/:id/notes", "destination": "/api/v1/event-notes?id=:id" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
