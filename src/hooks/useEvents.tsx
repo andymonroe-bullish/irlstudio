@@ -63,6 +63,15 @@ export interface RevenueItem {
   sort_order: number;
 }
 
+export interface BudgetLineItem {
+  id: string;
+  budget_item_id: string;
+  event_id: string;
+  name: string;
+  amount: number;
+  sort_order: number;
+}
+
 export interface RevenueStream {
   id: string;
   event_id: string;
@@ -257,6 +266,7 @@ export const useEvents = () => {
 export const useEventData = (eventId: string) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [budgetLineItems, setBudgetLineItems] = useState<BudgetLineItem[]>([]);
   const [revenueItems, setRevenueItems] = useState<RevenueItem[]>([]);
   const [revenueStreams, setRevenueStreams] = useState<RevenueStream[]>([]);
   const [phaseDueDates, setPhaseDueDates] = useState<Record<string, string>>({});
@@ -272,9 +282,10 @@ export const useEventData = (eventId: string) => {
     if (!eventId) return;
     try {
       setLoading(true);
-      const [tasksRes, budgetRes, revenueRes, revenueItemsRes, eventRes] = await Promise.all([
+      const [tasksRes, budgetRes, budgetLinesRes, revenueRes, revenueItemsRes, eventRes] = await Promise.all([
         supabase.from("tasks").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("budget_items").select("*").eq("event_id", eventId).order("sort_order"),
+        supabase.from("budget_line_items").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("revenue_streams").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("revenue_items").select("*").eq("event_id", eventId).order("sort_order"),
         supabase.from("events").select("phase_due_dates").eq("id", eventId).single(),
@@ -282,11 +293,13 @@ export const useEventData = (eventId: string) => {
 
       if (tasksRes.error) throw tasksRes.error;
       if (budgetRes.error) throw budgetRes.error;
+      if (budgetLinesRes.error) throw budgetLinesRes.error;
       if (revenueRes.error) throw revenueRes.error;
       if (revenueItemsRes.error) throw revenueItemsRes.error;
 
       setTasks(tasksRes.data || []);
       setBudgetItems(budgetRes.data || []);
+      setBudgetLineItems(budgetLinesRes.data || []);
       setRevenueStreams(revenueRes.data || []);
       setRevenueItems(revenueItemsRes.data || []);
       if (eventRes.data?.phase_due_dates) {
@@ -456,6 +469,8 @@ export const useEventData = (eventId: string) => {
       const { error } = await supabase.from("budget_items").delete().eq("id", itemId);
       if (error) throw error;
       setBudgetItems(prev => prev.filter(i => i.id !== itemId));
+      // Line items cascade-delete in the DB; mirror that locally
+      setBudgetLineItems(prev => prev.filter(l => l.budget_item_id !== itemId));
     } catch (error: any) {
       toast({ title: "Error deleting budget item", description: error.message, variant: "destructive" });
     }
@@ -469,6 +484,65 @@ export const useEventData = (eventId: string) => {
       }
     } catch (error: any) {
       toast({ title: "Error reordering budget items", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // When a budget item has line items, its actual_cost mirrors the sum of
+  // its lines. Called after any line change with the next full lines array.
+  const syncActualCostFromLines = async (budgetItemId: string, nextLines: BudgetLineItem[]) => {
+    const sum = nextLines
+      .filter(l => l.budget_item_id === budgetItemId)
+      .reduce((acc, l) => acc + Number(l.amount), 0);
+    setBudgetItems(prev => prev.map(i => i.id === budgetItemId ? { ...i, actual_cost: sum } : i));
+    await supabase.from("budget_items").update({ actual_cost: sum }).eq("id", budgetItemId);
+  };
+
+  const addBudgetLineItem = async (budgetItemId: string, item: { name: string; amount: number }) => {
+    if (!user) return;
+    try {
+      const maxOrder = Math.max(...budgetLineItems.filter(l => l.budget_item_id === budgetItemId).map(l => l.sort_order), 0);
+      const { data, error } = await supabase
+        .from("budget_line_items")
+        // created_by is required by the budget_line_items INSERT row-level-
+        // security policy (auth.uid() = created_by), so it must be set explicitly.
+        .insert({ budget_item_id: budgetItemId, event_id: eventId, ...item, created_by: user.id, sort_order: maxOrder + 1 })
+        .select().single();
+      if (error) throw error;
+      const nextLines = [...budgetLineItems, data];
+      setBudgetLineItems(nextLines);
+      await syncActualCostFromLines(budgetItemId, nextLines);
+    } catch (error: any) {
+      toast({ title: "Error adding line item", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const updateBudgetLineItem = async (lineId: string, updates: Partial<BudgetLineItem>) => {
+    try {
+      const { error } = await supabase.from("budget_line_items").update(updates).eq("id", lineId);
+      if (error) throw error;
+      const nextLines = budgetLineItems.map(l => l.id === lineId ? { ...l, ...updates } : l);
+      setBudgetLineItems(nextLines);
+      const line = nextLines.find(l => l.id === lineId);
+      if (line && updates.amount !== undefined) {
+        await syncActualCostFromLines(line.budget_item_id, nextLines);
+      }
+    } catch (error: any) {
+      toast({ title: "Error updating line item", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const deleteBudgetLineItem = async (lineId: string) => {
+    try {
+      const line = budgetLineItems.find(l => l.id === lineId);
+      const { error } = await supabase.from("budget_line_items").delete().eq("id", lineId);
+      if (error) throw error;
+      const nextLines = budgetLineItems.filter(l => l.id !== lineId);
+      setBudgetLineItems(nextLines);
+      if (line) {
+        await syncActualCostFromLines(line.budget_item_id, nextLines);
+      }
+    } catch (error: any) {
+      toast({ title: "Error deleting line item", description: error.message, variant: "destructive" });
     }
   };
 
@@ -544,10 +618,11 @@ export const useEventData = (eventId: string) => {
   };
 
   return {
-    tasks, budgetItems, revenueItems, revenueStreams, phaseDueDates, taskAssignees, taskCommentCounts, loading,
+    tasks, budgetItems, budgetLineItems, revenueItems, revenueStreams, phaseDueDates, taskAssignees, taskCommentCounts, loading,
     updateTask, addTask, deleteTask, reorderTasks, updatePhaseDueDate,
     updateTaskAssignees,
     updateBudgetItem, addBudgetItem, deleteBudgetItem, reorderBudgetItems,
+    addBudgetLineItem, updateBudgetLineItem, deleteBudgetLineItem,
     updateRevenueItem, addRevenueItem, deleteRevenueItem,
     updateRevenueStream, addRevenueStream, deleteRevenueStream,
     refetch: fetchEventData,

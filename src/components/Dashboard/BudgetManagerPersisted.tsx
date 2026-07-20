@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, DollarSign, Trash2, TrendingUp } from "lucide-react";
-import { BudgetItem, RevenueItem } from "@/hooks/useEvents";
+import { Plus, DollarSign, Trash2, TrendingUp, ChevronDown, ChevronRight, CornerDownRight } from "lucide-react";
+import { BudgetItem, BudgetLineItem, RevenueItem } from "@/hooks/useEvents";
 import { BUDGET_CATEGORIES } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +17,15 @@ import { cn } from "@/lib/utils";
 interface BudgetManagerPersistedProps {
   totalBudget: number;
   items: BudgetItem[];
+  lineItems: BudgetLineItem[];
   revenueItems: RevenueItem[];
   onUpdateItem: (id: string, updates: Partial<BudgetItem>) => Promise<void>;
   onAddItem: (item: Omit<BudgetItem, "id" | "event_id" | "sort_order">) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
   onReorderItems: (items: BudgetItem[]) => Promise<void>;
+  onAddLineItem: (budgetItemId: string, item: { name: string; amount: number }) => Promise<void>;
+  onUpdateLineItem: (id: string, updates: Partial<BudgetLineItem>) => Promise<void>;
+  onDeleteLineItem: (id: string) => Promise<void>;
   onUpdateRevenueItem: (id: string, updates: Partial<RevenueItem>) => Promise<void>;
   onAddRevenueItem: (item: Omit<RevenueItem, "id" | "event_id" | "sort_order">) => Promise<void>;
   onDeleteRevenueItem: (id: string) => Promise<void>;
@@ -29,14 +33,19 @@ interface BudgetManagerPersistedProps {
 
 type LocalEdits = Record<string, { name?: string; estimated_cost?: string; actual_cost?: string }>;
 type LocalRevenueEdits = Record<string, { name?: string; amount?: string }>;
+type LocalLineEdits = Record<string, { name?: string; amount?: string }>;
 
 const BudgetManagerPersisted = ({
   totalBudget,
   items,
+  lineItems,
   revenueItems,
   onUpdateItem,
   onAddItem,
   onDeleteItem,
+  onAddLineItem,
+  onUpdateLineItem,
+  onDeleteLineItem,
   onUpdateRevenueItem,
   onAddRevenueItem,
   onDeleteRevenueItem,
@@ -52,6 +61,35 @@ const BudgetManagerPersisted = ({
   // Local editing state — only synced to DB on blur
   const [localEdits, setLocalEdits] = useState<LocalEdits>({});
   const [localRevenueEdits, setLocalRevenueEdits] = useState<LocalRevenueEdits>({});
+  const [localLineEdits, setLocalLineEdits] = useState<LocalLineEdits>({});
+  // Which budget items are expanded to show their itemized lines
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  // Budget item id currently showing the inline "add line item" form
+  const [addingLineFor, setAddingLineFor] = useState<string | null>(null);
+  const [newLine, setNewLine] = useState({ name: "", amount: 0 });
+
+  const linesFor = (budgetItemId: string) =>
+    lineItems.filter((l) => l.budget_item_id === budgetItemId);
+
+  const toggleExpanded = (budgetItemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(budgetItemId)) {
+        next.delete(budgetItemId);
+      } else {
+        next.add(budgetItemId);
+      }
+      return next;
+    });
+  };
+
+  const handleAddLine = (budgetItemId: string) => {
+    if (newLine.name.trim()) {
+      onAddLineItem(budgetItemId, { name: newLine.name.trim(), amount: newLine.amount });
+      setNewLine({ name: "", amount: 0 });
+      // Keep the form open so several purchases can be logged in a row
+    }
+  };
 
   const totalActual = items.reduce((sum, item) => sum + item.actual_cost, 0);
   const totalRevenue = revenueItems.reduce((sum, item) => sum + item.amount, 0);
@@ -184,6 +222,52 @@ const BudgetManagerPersisted = ({
     });
   };
 
+  // Line items use the same edit-locally-then-sync-on-blur pattern
+  const getLineDisplayValue = (lineId: string, dbValue: number) => {
+    const localVal = localLineEdits[lineId]?.amount;
+    if (localVal !== undefined) return localVal;
+    return formatCurrency(dbValue);
+  };
+
+  const handleLineFocus = (lineId: string, field: "name" | "amount", dbValue: string | number) => {
+    setLocalLineEdits((prev) => ({
+      ...prev,
+      [lineId]: { ...prev[lineId], [field]: String(dbValue) },
+    }));
+  };
+
+  const handleLineChange = (lineId: string, field: "name" | "amount", value: string) => {
+    setLocalLineEdits((prev) => ({
+      ...prev,
+      [lineId]: { ...prev[lineId], [field]: value },
+    }));
+  };
+
+  const handleLineBlur = (lineId: string, field: "name" | "amount") => {
+    const localVal = localLineEdits[lineId]?.[field];
+    if (localVal === undefined) return;
+
+    const updates: Partial<BudgetLineItem> = {};
+    if (field === "name") updates.name = localVal;
+    if (field === "amount") updates.amount = parseFloat(localVal) || 0;
+
+    onUpdateLineItem(lineId, updates);
+
+    setLocalLineEdits((prev) => {
+      const next = { ...prev };
+      if (next[lineId]) {
+        const updated = { ...next[lineId] };
+        delete updated[field];
+        if (Object.keys(updated).length === 0) {
+          delete next[lineId];
+        } else {
+          next[lineId] = updated;
+        }
+      }
+      return next;
+    });
+  };
+
   const handleAddRevenue = () => {
     if (newRevenue.name.trim()) {
       onAddRevenueItem({ name: newRevenue.name, amount: newRevenue.amount });
@@ -292,95 +376,221 @@ const BudgetManagerPersisted = ({
 
         {/* Items */}
         <div>
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="group grid grid-cols-1 sm:grid-cols-[1fr,100px,90px,90px,32px] gap-2 px-3 py-2 border-b border-border/50 hover:bg-muted/20 items-center"
-            >
-              {/* Mobile: Stacked Layout */}
-              <div className="sm:hidden">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-foreground text-sm truncate">{item.name}</span>
+          {items.map((item) => {
+            const itemLines = linesFor(item.id);
+            const isExpanded = expandedItems.has(item.id);
+            const isItemized = itemLines.length > 0;
+            return (
+              <div key={item.id} className="border-b border-border/50">
+                <div className="group grid grid-cols-1 sm:grid-cols-[1fr,100px,90px,90px,32px] gap-2 px-3 py-2 hover:bg-muted/20 items-center">
+                  {/* Mobile: Stacked Layout */}
+                  <div className="sm:hidden">
+                    <div className="flex items-center justify-between mb-1">
+                      <button
+                        onClick={() => toggleExpanded(item.id)}
+                        className="flex items-center gap-1 flex-1 min-w-0 text-left"
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        )}
+                        <span className="font-medium text-foreground text-sm truncate">{item.name}</span>
+                        {isItemized && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">({itemLines.length})</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => onDeleteItem(item.id)}
+                        className="p-1 rounded hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", getCategoryColor(item.category))}>
+                        {getCategoryName(item.category)}
+                      </span>
+                      <span className="text-muted-foreground">Est: {formatCurrency(item.estimated_cost)}</span>
+                      <span className="text-green-600">Act: {formatCurrency(item.actual_cost)}</span>
+                    </div>
+                  </div>
+
+                  {/* Desktop: Expand Toggle + Name */}
+                  <div className="hidden sm:flex items-center gap-1 min-w-0">
+                    <button
+                      onClick={() => toggleExpanded(item.id)}
+                      className="p-0.5 rounded hover:bg-muted text-muted-foreground shrink-0"
+                      title={isExpanded ? "Collapse line items" : "Itemize this expense"}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <Input
+                      value={getLocalValue(item.id, "name", item.name)}
+                      onFocus={() => handleFocusField(item.id, "name", item.name)}
+                      onChange={(e) => handleLocalChange(item.id, "name", e.target.value)}
+                      onBlur={() => handleBlurField(item.id, "name")}
+                      className="h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded flex-1"
+                    />
+                    {isItemized && (
+                      <span className="text-[10px] text-muted-foreground shrink-0 pr-1">
+                        {itemLines.length} {itemLines.length === 1 ? "item" : "items"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Desktop: Category */}
+                  <Select
+                    value={item.category}
+                    onValueChange={(v) => onUpdateItem(item.id, { category: v })}
+                  >
+                    <SelectTrigger className="hidden sm:flex h-7 text-[10px] border-0 bg-transparent p-0 gap-1 focus:ring-0">
+                      <span className={cn("px-1.5 py-0.5 rounded font-medium", getCategoryColor(item.category))}>
+                        {getCategoryName(item.category)}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {BUDGET_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id} className="text-xs">
+                          <span className={cn("px-1.5 py-0.5 rounded", cat.color)}>{cat.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Desktop: Estimated Cost */}
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={getDisplayValue(item.id, "estimated_cost", item.estimated_cost)}
+                    onFocus={(e) => {
+                      handleFocusField(item.id, "estimated_cost", item.estimated_cost);
+                      e.target.select();
+                    }}
+                    onChange={(e) => handleLocalChange(item.id, "estimated_cost", e.target.value.replace(/[^0-9.]/g, ""))}
+                    onBlur={() => handleBlurField(item.id, "estimated_cost")}
+                    className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded w-full"
+                  />
+
+                  {/* Desktop: Actual Cost — read-only sum when itemized */}
+                  {isItemized ? (
+                    <span
+                      className="hidden sm:block text-sm text-green-600 p-1 truncate"
+                      title="Sum of line items — expand to edit"
+                    >
+                      {formatCurrency(item.actual_cost)}
+                    </span>
+                  ) : (
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={getDisplayValue(item.id, "actual_cost", item.actual_cost)}
+                      onFocus={(e) => {
+                        handleFocusField(item.id, "actual_cost", item.actual_cost);
+                        e.target.select();
+                      }}
+                      onChange={(e) => handleLocalChange(item.id, "actual_cost", e.target.value.replace(/[^0-9.]/g, ""))}
+                      onBlur={() => handleBlurField(item.id, "actual_cost")}
+                      className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-full"
+                    />
+                  )}
+
                   <button
                     onClick={() => onDeleteItem(item.id)}
-                    className="p-1 rounded hover:bg-destructive/10 hover:text-destructive"
+                    className="hidden sm:block opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", getCategoryColor(item.category))}>
-                    {getCategoryName(item.category)}
-                  </span>
-                  <span className="text-muted-foreground">Est: {formatCurrency(item.estimated_cost)}</span>
-                  <span className="text-green-600">Act: {formatCurrency(item.actual_cost)}</span>
-                </div>
+
+                {/* Expanded: Itemized Line Items */}
+                {isExpanded && (
+                  <div className="bg-muted/10 border-t border-border/30 pl-8 pr-3 py-2 space-y-1">
+                    {itemLines.map((line) => (
+                      <div key={line.id} className="group/line flex items-center gap-2">
+                        <CornerDownRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                        <Input
+                          value={localLineEdits[line.id]?.name ?? line.name}
+                          onFocus={() => handleLineFocus(line.id, "name", line.name)}
+                          onChange={(e) => handleLineChange(line.id, "name", e.target.value)}
+                          onBlur={() => handleLineBlur(line.id, "name")}
+                          className="h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded flex-1"
+                        />
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={getLineDisplayValue(line.id, line.amount)}
+                          onFocus={(e) => {
+                            handleLineFocus(line.id, "amount", line.amount);
+                            e.target.select();
+                          }}
+                          onChange={(e) => handleLineChange(line.id, "amount", e.target.value.replace(/[^0-9.]/g, ""))}
+                          onBlur={() => handleLineBlur(line.id, "amount")}
+                          className="h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-24 text-right"
+                        />
+                        <button
+                          onClick={() => onDeleteLineItem(line.id)}
+                          className="opacity-0 group-hover/line:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {itemLines.length === 0 && addingLineFor !== item.id && (
+                      <p className="text-xs text-muted-foreground pl-5 py-1">
+                        No line items yet — itemize what you spent on {item.name}.
+                      </p>
+                    )}
+
+                    {addingLineFor === item.id ? (
+                      <div className="flex items-center gap-2 pl-5 pt-1">
+                        <Input
+                          placeholder="What did you buy?"
+                          value={newLine.name}
+                          onChange={(e) => setNewLine((prev) => ({ ...prev, name: e.target.value }))}
+                          className="h-7 text-sm flex-1"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddLine(item.id);
+                            if (e.key === "Escape") setAddingLineFor(null);
+                          }}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={newLine.amount || ""}
+                          onChange={(e) => setNewLine((prev) => ({ ...prev, amount: Number(e.target.value) }))}
+                          className="h-7 text-sm w-24"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddLine(item.id);
+                            if (e.key === "Escape") setAddingLineFor(null);
+                          }}
+                        />
+                        <Button size="sm" onClick={() => handleAddLine(item.id)} className="h-7 text-xs">Add</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setAddingLineFor(null)} className="h-7 text-xs">Done</Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setNewLine({ name: "", amount: 0 });
+                          setAddingLineFor(item.id);
+                        }}
+                        className="flex items-center gap-1 pl-5 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add line item
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Desktop: Name */}
-              <Input
-                value={getLocalValue(item.id, "name", item.name)}
-                onFocus={() => handleFocusField(item.id, "name", item.name)}
-                onChange={(e) => handleLocalChange(item.id, "name", e.target.value)}
-                onBlur={() => handleBlurField(item.id, "name")}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded"
-              />
-
-              {/* Desktop: Category */}
-              <Select
-                value={item.category}
-                onValueChange={(v) => onUpdateItem(item.id, { category: v })}
-              >
-                <SelectTrigger className="hidden sm:flex h-7 text-[10px] border-0 bg-transparent p-0 gap-1 focus:ring-0">
-                  <span className={cn("px-1.5 py-0.5 rounded font-medium", getCategoryColor(item.category))}>
-                    {getCategoryName(item.category)}
-                  </span>
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {BUDGET_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} className="text-xs">
-                      <span className={cn("px-1.5 py-0.5 rounded", cat.color)}>{cat.name}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Desktop: Estimated Cost */}
-              <Input
-                type="text"
-                inputMode="numeric"
-                value={getDisplayValue(item.id, "estimated_cost", item.estimated_cost)}
-                onFocus={(e) => {
-                  handleFocusField(item.id, "estimated_cost", item.estimated_cost);
-                  e.target.select();
-                }}
-                onChange={(e) => handleLocalChange(item.id, "estimated_cost", e.target.value.replace(/[^0-9.]/g, ""))}
-                onBlur={() => handleBlurField(item.id, "estimated_cost")}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded w-full"
-              />
-
-              {/* Desktop: Actual Cost */}
-              <Input
-                type="text"
-                inputMode="numeric"
-                value={getDisplayValue(item.id, "actual_cost", item.actual_cost)}
-                onFocus={(e) => {
-                  handleFocusField(item.id, "actual_cost", item.actual_cost);
-                  e.target.select();
-                }}
-                onChange={(e) => handleLocalChange(item.id, "actual_cost", e.target.value.replace(/[^0-9.]/g, ""))}
-                onBlur={() => handleBlurField(item.id, "actual_cost")}
-                className="hidden sm:block h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-full"
-              />
-
-              <button
-                onClick={() => onDeleteItem(item.id)}
-                className="hidden sm:block opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Add Item Inline */}
