@@ -1,4 +1,4 @@
-import { authenticate, getAccessibleChild, methodNotAllowed, pick } from "../../_lib/api.js";
+import { authenticate, getAccessibleChild, methodNotAllowed, pick } from "../_lib/api.js";
 
 const WRITABLE = ["title", "content", "folder_id", "sort_order"];
 
