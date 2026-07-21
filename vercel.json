@@ -3,6 +3,10 @@
     { "source": "/api/v1/events/:id/tasks", "destination": "/api/v1/event-tasks?id=:id" },
     { "source": "/api/v1/events/:id/budget", "destination": "/api/v1/event-budget?id=:id" },
     { "source": "/api/v1/events/:id/notes", "destination": "/api/v1/event-notes?id=:id" },
+    { "source": "/api/v1/events/:id", "destination": "/api/v1/event?id=:id" },
+    { "source": "/api/v1/tasks/:id", "destination": "/api/v1/task?id=:id" },
+    { "source": "/api/v1/budget-items/:id", "destination": "/api/v1/budget-item?id=:id" },
+    { "source": "/api/v1/notes/:id", "destination": "/api/v1/note?id=:id" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
