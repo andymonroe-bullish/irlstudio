@@ -9,6 +9,7 @@ import EventsList from "./pages/EventsList";
 import CreateEvent from "./pages/CreateEvent";
 import EventDetail from "./pages/EventDetail";
 import Settings from "./pages/Settings";
+import AdminPortal from "./pages/AdminPortal";
 import Auth from "./pages/Auth";
 import CheckEmail from "./pages/CheckEmail";
 import AuthConfirmed from "./pages/AuthConfirmed";
@@ -50,6 +51,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPortal />
                 </ProtectedRoute>
               }
             />

@@ -36,6 +36,10 @@ export default function handler(_req: any, res: any) {
       { method: "GET", path: "/notes/:id", description: "Get a note." },
       { method: "PATCH", path: "/notes/:id", description: "Update a note." },
       { method: "DELETE", path: "/notes/:id", description: "Delete a note." },
+      { method: "GET", path: "/meetings", description: "List meeting notes ingested from Circleback (summaries and action items; transcript omitted). Optional ?processed=true|false and ?since=<ISO date> filters. Workflow for agents: list unprocessed meetings, read each one, create tasks in the right events from the action items, then PATCH the meeting with { \"processed\": true }." },
+      { method: "GET", path: "/meetings/:id", description: "Get one meeting in full: summary, structured notes, action_items, attendees, and the complete transcript." },
+      { method: "PATCH", path: "/meetings/:id", description: "Update a meeting; primarily { \"processed\": true } to mark it handled after creating tasks from it." },
+      { method: "DELETE", path: "/meetings/:id", description: "Delete a meeting." },
     ],
   });
 }

@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Calendar, Trash2, LogOut, Pencil, Check, X, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Calendar, Trash2, LogOut, Pencil, Check, X, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEvents, Event } from "@/hooks/useEvents";
 import { useAuth } from "@/hooks/useAuth";
+import { isAdminEmail } from "@/lib/admins";
 import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -216,6 +217,12 @@ const EventsList = () => {
               <span className="hidden sm:inline">Create New Event</span>
               <span className="sm:hidden">New</span>
             </Button>
+            {isAdminEmail(user?.email) && (
+              <Button variant="outline" onClick={() => navigate("/admin")} size="sm" className="gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => navigate("/settings")} size="sm" className="gap-2">
               <SettingsIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>

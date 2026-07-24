@@ -7,6 +7,8 @@
     { "source": "/api/v1/tasks/:id", "destination": "/api/v1/task?id=:id" },
     { "source": "/api/v1/budget-items/:id", "destination": "/api/v1/budget-item?id=:id" },
     { "source": "/api/v1/notes/:id", "destination": "/api/v1/note?id=:id" },
+    { "source": "/api/v1/meetings/:id", "destination": "/api/v1/meeting?id=:id" },
+    { "source": "/api/webhooks/circleback", "destination": "/api/v1/webhook-circleback" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

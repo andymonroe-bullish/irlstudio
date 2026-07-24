@@ -391,6 +391,57 @@ export type Database = {
           },
         ]
       }
+      meetings: {
+        Row: {
+          action_items: Json | null
+          attendees: Json | null
+          created_at: string
+          external_id: string | null
+          id: string
+          meeting_date: string | null
+          notes: Json | null
+          processed: boolean
+          processed_at: string | null
+          raw_payload: Json
+          source: string
+          summary: string | null
+          title: string
+          transcript: string | null
+        }
+        Insert: {
+          action_items?: Json | null
+          attendees?: Json | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          meeting_date?: string | null
+          notes?: Json | null
+          processed?: boolean
+          processed_at?: string | null
+          raw_payload?: Json
+          source?: string
+          summary?: string | null
+          title?: string
+          transcript?: string | null
+        }
+        Update: {
+          action_items?: Json | null
+          attendees?: Json | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          meeting_date?: string | null
+          notes?: Json | null
+          processed?: boolean
+          processed_at?: string | null
+          raw_payload?: Json
+          source?: string
+          summary?: string | null
+          title?: string
+          transcript?: string | null
+        }
+        Relationships: []
+      }
       sub_task_files: {
         Row: {
           created_at: string
