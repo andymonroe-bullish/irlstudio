@@ -68,7 +68,18 @@ const PhaseSection = ({
   const isOverdue = phaseDueDate && new Date(phaseDueDate) < new Date();
 
   return (
-    <div className="overflow-hidden">
+    // The whole section — header row included — is the drop target, so a task
+    // can be dropped on any phase even while it is collapsed, and the layout
+    // never shifts when a drag starts (which would break drop hit-testing).
+    <Droppable droppableId={phase.id}>
+      {(provided, snapshot) => (
+    <div
+      ref={provided.innerRef}
+      {...provided.droppableProps}
+      className={`transition-colors ${
+        snapshot.isDraggingOver ? "bg-accent/40 rounded-xl ring-2 ring-primary/40" : ""
+      }`}
+    >
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-secondary/50 transition-colors group"
@@ -162,78 +173,71 @@ const PhaseSection = ({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={false}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <Droppable droppableId={phase.id}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`pl-4 sm:pl-12 pr-2 sm:pr-4 pb-4 space-y-1 min-h-[50px] transition-colors ${
-                    snapshot.isDraggingOver ? "bg-accent/30 rounded-lg" : ""
-                  }`}
-                >
-                  {phase.tasks.map((task, index) => {
-                    const taskData = tasksData.find(t => t.id === task.id);
-                    return taskData ? (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        taskData={taskData}
-                        index={index}
-                        phaseColor={phase.color}
-                        members={members}
-                        commentCount={taskCommentCounts[task.id] || 0}
-                        onStatusChange={onStatusChange}
-                        onAssigneeToggle={onAssigneeToggle}
-                        onDelete={onDeleteTask}
-                        onUpdateTask={onUpdateTask}
-                      />
-                    ) : null;
-                  })}
-                  {provided.placeholder}
+                  <div className="pl-4 sm:pl-12 pr-2 sm:pr-4 pb-4 space-y-1 min-h-[50px]">
+                    {phase.tasks.map((task, index) => {
+                      const taskData = tasksData.find(t => t.id === task.id);
+                      return taskData ? (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          taskData={taskData}
+                          index={index}
+                          phaseColor={phase.color}
+                          members={members}
+                          commentCount={taskCommentCounts[task.id] || 0}
+                          onStatusChange={onStatusChange}
+                          onAssigneeToggle={onAssigneeToggle}
+                          onDelete={onDeleteTask}
+                          onUpdateTask={onUpdateTask}
+                        />
+                      ) : null;
+                    })}
 
-                  {isAddingTask ? (
-                    <div className="flex items-center gap-2 p-2">
-                      <Input
-                        autoFocus
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onBlur={() => {
-                          if (!newTaskTitle.trim()) {
-                            setIsAddingTask(false);
-                          }
-                        }}
-                        placeholder="Enter task name..."
-                        className="h-9"
-                      />
-                      <Button size="sm" onClick={handleAddTask}>
-                        Add
+                    {isAddingTask ? (
+                      <div className="flex items-center gap-2 p-2">
+                        <Input
+                          autoFocus
+                          value={newTaskTitle}
+                          onChange={(e) => setNewTaskTitle(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={() => {
+                            if (!newTaskTitle.trim()) {
+                              setIsAddingTask(false);
+                            }
+                          }}
+                          placeholder="Enter task name..."
+                          className="h-9"
+                        />
+                        <Button size="sm" onClick={handleAddTask}>
+                          Add
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:text-primary/80 hover:bg-accent mt-2"
+                        onClick={() => setIsAddingTask(true)}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Task
                       </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-primary hover:text-primary/80 hover:bg-accent mt-2"
-                      onClick={() => setIsAddingTask(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add Task
-                    </Button>
-                  )}
-                </div>
-              )}
-            </Droppable>
+                    )}
+                  </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {provided.placeholder}
     </div>
+      )}
+    </Droppable>
   );
 };
 

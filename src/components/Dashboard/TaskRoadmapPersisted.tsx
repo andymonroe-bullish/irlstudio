@@ -92,6 +92,11 @@ const TaskRoadmapPersisted = ({
   };
 
   const handleDragEnd = (result: DropResult) => {
+    // Open the destination phase so the user can see where the task landed
+    if (result.destination) {
+      const dest = result.destination.droppableId;
+      setExpandedPhases((prev) => (prev.includes(dest) ? prev : [...prev, dest]));
+    }
     const { source, destination } = result;
 
     if (!destination) return;
