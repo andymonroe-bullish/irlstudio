@@ -133,6 +133,10 @@ export default async function handler(req: any, res: any) {
       "circleback webhook rejected:",
       JSON.stringify({ headers: headerInfo, bodyLength: rawBody.length, bodyPreview: rawBody.slice(0, 300) })
     );
+    // Temporary: persist rejection details for diagnosis (CLI log lines truncate)
+    await getAdminClient()
+      .from("webhook_debug")
+      .insert({ headers: headerInfo, body: rawBody.slice(0, 2000) });
     return res.status(401).json({ error: "Invalid webhook secret or signature" });
   }
 
