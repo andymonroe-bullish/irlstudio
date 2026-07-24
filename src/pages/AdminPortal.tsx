@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
+  Check,
   FileText,
+  Pencil,
   ShieldAlert,
   Trash2,
   CheckCircle2,
@@ -11,6 +13,7 @@ import {
   Users,
   Webhook,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isAdminEmail } from "@/lib/admins";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
@@ -101,6 +105,8 @@ const AdminPortal = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
 
   const isAdmin = isAdminEmail(user?.email);
 
@@ -125,6 +131,30 @@ const AdminPortal = () => {
   useEffect(() => {
     if (isAdmin) fetchMeetings();
   }, [isAdmin, fetchMeetings]);
+
+  const renameMeeting = async (id: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setEditingTitle(false);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("meetings")
+      .update({ title: trimmed })
+      .eq("id", id)
+      .select();
+    if (error || !data?.length) {
+      toast({
+        title: "Error renaming meeting",
+        description: error?.message || "You don't have permission to rename this meeting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setMeetings((prev) => prev.map((m) => (m.id === id ? { ...m, title: trimmed } : m)));
+    setEditingTitle(false);
+    toast({ title: "Meeting renamed" });
+  };
 
   const deleteMeeting = async (id: string) => {
     const { error } = await supabase.from("meetings").delete().eq("id", id);
@@ -222,7 +252,10 @@ const AdminPortal = () => {
               {meetings.map((meeting) => (
                 <button
                   key={meeting.id}
-                  onClick={() => setSelectedId(meeting.id)}
+                  onClick={() => {
+                    setSelectedId(meeting.id);
+                    setEditingTitle(false);
+                  }}
                   className={cn(
                     "w-full text-left rounded-xl border px-4 py-3 transition-colors group",
                     selectedId === meeting.id
@@ -269,8 +302,49 @@ const AdminPortal = () => {
               ) : (
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground">{selected.title}</h2>
+                    <div className="flex-1 min-w-0">
+                      {editingTitle ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={titleDraft}
+                            onChange={(e) => setTitleDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") renameMeeting(selected.id, titleDraft);
+                              if (e.key === "Escape") setEditingTitle(false);
+                            }}
+                            className="h-9 text-lg font-semibold"
+                          />
+                          <button
+                            onClick={() => renameMeeting(selected.id, titleDraft)}
+                            className="p-1.5 rounded hover:bg-primary/10 text-primary transition-all flex-shrink-0"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingTitle(false)}
+                            className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-all flex-shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group/title">
+                          <h2 className="text-lg font-semibold text-foreground truncate">
+                            {selected.title}
+                          </h2>
+                          <button
+                            onClick={() => {
+                              setTitleDraft(selected.title);
+                              setEditingTitle(true);
+                            }}
+                            title="Rename meeting"
+                            className="p-1 rounded opacity-0 group-hover/title:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex-shrink-0"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {format(
                           new Date(selected.meeting_date || selected.created_at),
