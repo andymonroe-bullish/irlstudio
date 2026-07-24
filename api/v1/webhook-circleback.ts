@@ -67,6 +67,35 @@ function hasValidSignature(req: any, rawBody: string, signingSecret: string): bo
   });
 }
 
+// Circleback's actual scheme (observed live): an x-signature header carrying
+// a hex HMAC-SHA256 of the raw body alone. Key encoding unspecified, so try
+// the plausible decodings of the whsec_ secret; accept hex or base64 digests.
+function hasValidBodySignature(req: any, rawBody: string, signingSecret: string): boolean {
+  const header =
+    req.headers["x-signature"] ||
+    req.headers["x-circleback-signature"] ||
+    req.headers["x-hub-signature-256"];
+  if (!header) return false;
+  const provided = String(header).replace(/^sha256=/i, "").trim();
+
+  const stripped = signingSecret.replace(/^whsec_/, "");
+  const candidateKeys = [
+    Buffer.from(signingSecret, "utf8"),
+    Buffer.from(stripped, "utf8"),
+    Buffer.from(stripped, "base64"),
+  ];
+  if (/^[0-9a-f]+$/i.test(stripped) && stripped.length % 2 === 0) {
+    candidateKeys.push(Buffer.from(stripped, "hex"));
+  }
+
+  return candidateKeys.some((key) => {
+    const hmac = createHmac("sha256", key).update(rawBody);
+    const digestHex = hmac.digest("hex");
+    const digestB64 = createHmac("sha256", key).update(rawBody).digest("base64");
+    return safeEqual(provided.toLowerCase(), digestHex) || safeEqual(provided, digestB64);
+  });
+}
+
 const first = (obj: any, keys: string[]): any => {
   for (const key of keys) {
     const val = key.split(".").reduce((o, part) => (o == null ? o : o[part]), obj);
@@ -121,7 +150,10 @@ export default async function handler(req: any, res: any) {
     !!providedShared &&
     ((!!sharedSecret && safeEqual(providedShared, sharedSecret)) ||
       (!!signingSecret && safeEqual(providedShared, signingSecret)));
-  const signatureOk = !!signingSecret && hasValidSignature(req, rawBody, signingSecret);
+  const signatureOk =
+    !!signingSecret &&
+    (hasValidSignature(req, rawBody, signingSecret) ||
+      hasValidBodySignature(req, rawBody, signingSecret));
   if (!sharedOk && !signatureOk) {
     // Diagnostic for Vercel runtime logs: which auth headers were present on
     // the rejected request (signature values are per-message, not secrets).
@@ -136,7 +168,7 @@ export default async function handler(req: any, res: any) {
     // Temporary: persist rejection details for diagnosis (CLI log lines truncate)
     await getAdminClient()
       .from("webhook_debug")
-      .insert({ headers: headerInfo, body: rawBody.slice(0, 2000) });
+      .insert({ headers: headerInfo, body: rawBody });
     return res.status(401).json({ error: "Invalid webhook secret or signature" });
   }
 
