@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { getAdminClient } from "../_lib/api.js";
 
 // Inbound webhook for Circleback (circleback.ai) meeting data. Circleback's
@@ -5,8 +6,63 @@ import { getAdminClient } from "../_lib/api.js";
 // tolerant: known field aliases are tried in order and the full body is
 // always kept in raw_payload so nothing is ever lost.
 //
-// Auth: the shared secret must be sent as ?secret=, an X-Webhook-Secret
-// header, or an Authorization: Bearer header.
+// Auth, either of:
+// - Circleback's whsec_ signing secret (CIRCLEBACK_SIGNING_SECRET): requests
+//   are verified via Standard Webhooks HMAC signatures over the raw body
+//   (webhook-id/webhook-timestamp/webhook-signature or svix-* headers).
+// - Shared secret (CIRCLEBACK_WEBHOOK_SECRET) sent as ?secret=, an
+//   X-Webhook-Secret header, or an Authorization: Bearer header — kept for
+//   manual testing and non-signing senders.
+
+// Signatures are computed over the exact raw bytes, so body parsing is off.
+export const config = { api: { bodyParser: false } };
+
+async function readRawBody(req: any): Promise<string> {
+  let raw = "";
+  try {
+    for await (const chunk of req) raw += chunk;
+  } catch {
+    // stream already consumed by a body parser
+  }
+  if (!raw && req.body !== undefined) {
+    return typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+  }
+  return raw;
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
+
+// Standard Webhooks (Svix-style) verification: HMAC-SHA256 of
+// "<id>.<timestamp>.<raw body>" keyed by the base64-decoded part of whsec_.
+function hasValidSignature(req: any, rawBody: string, signingSecret: string): boolean {
+  const id = req.headers["webhook-id"] || req.headers["svix-id"];
+  const timestamp = req.headers["webhook-timestamp"] || req.headers["svix-timestamp"];
+  const sigHeader = req.headers["webhook-signature"] || req.headers["svix-signature"];
+  if (!id || !timestamp || !sigHeader) return false;
+
+  const signedContent = `${id}.${timestamp}.${rawBody}`;
+  const stripped = signingSecret.replace(/^whsec_/, "");
+  // The secret portion should be base64, but tolerate senders that key the
+  // HMAC with the raw string instead.
+  const candidateKeys = [
+    Buffer.from(stripped, "base64"),
+    Buffer.from(stripped, "utf8"),
+    Buffer.from(signingSecret, "utf8"),
+  ];
+  const provided = String(sigHeader)
+    .split(" ")
+    .map((part) => part.split(",").pop() || "")
+    .filter(Boolean);
+
+  return candidateKeys.some((key) => {
+    const expected = createHmac("sha256", key).update(signedContent).digest("base64");
+    return provided.some((sig) => safeEqual(sig, expected));
+  });
+}
 
 const first = (obj: any, keys: string[]): any => {
   for (const key of keys) {
@@ -42,16 +98,27 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method not allowed. Use: POST" });
   }
 
-  const secret = process.env.CIRCLEBACK_WEBHOOK_SECRET;
-  const provided =
+  const rawBody = await readRawBody(req);
+
+  const sharedSecret = process.env.CIRCLEBACK_WEBHOOK_SECRET;
+  const signingSecret = process.env.CIRCLEBACK_SIGNING_SECRET;
+  const providedShared =
     req.query?.secret ||
     req.headers["x-webhook-secret"] ||
     String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!secret || provided !== secret) {
-    return res.status(401).json({ error: "Invalid webhook secret" });
+
+  const sharedOk = !!sharedSecret && !!providedShared && safeEqual(String(providedShared), sharedSecret);
+  const signatureOk = !!signingSecret && hasValidSignature(req, rawBody, signingSecret);
+  if (!sharedOk && !signatureOk) {
+    return res.status(401).json({ error: "Invalid webhook secret or signature" });
   }
 
-  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body ?? {});
+  let body: any;
+  try {
+    body = rawBody ? JSON.parse(rawBody) : {};
+  } catch {
+    return res.status(400).json({ error: "Body must be valid JSON" });
+  }
   const meeting = body.meeting && typeof body.meeting === "object" ? { ...body, ...body.meeting } : body;
 
   const externalId = first(meeting, ["id", "meetingId", "meeting_id", "eventId", "uuid"]);
