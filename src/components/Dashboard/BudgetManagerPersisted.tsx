@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Plus, DollarSign, Trash2, TrendingUp, ChevronDown, ChevronRight, CornerDownRight } from "lucide-react";
 import { BudgetItem, BudgetLineItem, RevenueItem } from "@/hooks/useEvents";
 import { BUDGET_CATEGORIES } from "./types";
+import BudgetReceipts from "./BudgetReceipts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -400,12 +401,15 @@ const BudgetManagerPersisted = ({
                           <span className="text-[10px] text-muted-foreground shrink-0">({itemLines.length})</span>
                         )}
                       </button>
-                      <button
-                        onClick={() => onDeleteItem(item.id)}
-                        className="p-1 rounded hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <BudgetReceipts budgetItemId={item.id} />
+                        <button
+                          onClick={() => onDeleteItem(item.id)}
+                          className="p-1 rounded hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-medium", getCategoryColor(item.category))}>
@@ -441,6 +445,7 @@ const BudgetManagerPersisted = ({
                         {itemLines.length} {itemLines.length === 1 ? "item" : "items"}
                       </span>
                     )}
+                    <BudgetReceipts budgetItemId={item.id} />
                   </div>
 
                   {/* Desktop: Category */}
@@ -532,6 +537,7 @@ const BudgetManagerPersisted = ({
                           onBlur={() => handleLineBlur(line.id, "amount")}
                           className="h-7 text-sm border-0 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-primary/50 rounded text-green-600 w-24 text-right"
                         />
+                        <BudgetReceipts lineItemId={line.id} />
                         <button
                           onClick={() => onDeleteLineItem(line.id)}
                           className="opacity-0 group-hover/line:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"

@@ -391,6 +391,39 @@ export type Database = {
           },
         ]
       }
+      budget_receipts: {
+        Row: {
+          budget_item_id: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          line_item_id: string | null
+        }
+        Insert: {
+          budget_item_id?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          line_item_id?: string | null
+        }
+        Update: {
+          budget_item_id?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          line_item_id?: string | null
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           action_items: Json | null
