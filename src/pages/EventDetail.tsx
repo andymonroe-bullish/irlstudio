@@ -65,7 +65,12 @@ const EventDetail = () => {
           </Button>
         </div>
         
-        <EventDashboardPersisted event={event} />
+        <EventDashboardPersisted
+          event={event}
+          onEventUpdated={(updates) =>
+            setEvent((prev) => (prev ? { ...prev, ...updates } : prev))
+          }
+        />
       </div>
     </div>
   );

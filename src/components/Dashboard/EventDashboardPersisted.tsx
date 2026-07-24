@@ -15,6 +15,7 @@ import FilesManager from "./FilesManager";
 
 interface EventDashboardPersistedProps {
   event: Event;
+  onEventUpdated?: (updates: Partial<Event>) => void;
 }
 
 type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes" | "files";
@@ -22,7 +23,7 @@ type TaskSection = "design" | "promotion";
 
 const VALID_VIEWS: DashboardView[] = ["tasks", "budget", "projections", "itinerary", "notes", "files"];
 
-const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
+const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersistedProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as DashboardView | null;
   const activeView: DashboardView = tabParam && VALID_VIEWS.includes(tabParam) ? tabParam : "tasks";
@@ -75,7 +76,7 @@ const EventDashboardPersisted = ({ event }: EventDashboardPersistedProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <EventHeaderPersisted event={event} />
+      <EventHeaderPersisted event={event} onEventUpdated={onEventUpdated} />
 
       {/* Toggle Tabs */}
       <div className="flex items-center justify-center mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
