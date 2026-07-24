@@ -58,9 +58,9 @@ export default async function handler(req: any, res: any) {
   const row = {
     source: "circleback",
     external_id: externalId != null ? String(externalId) : null,
-    title:
-      asText(first(meeting, ["name", "title", "meetingName", "meeting_title", "subject"])) ||
-      "Untitled meeting",
+    // Null when absent so a sparse redelivery can't clobber a real title;
+    // the insert path fills in the fallback below.
+    title: asText(first(meeting, ["name", "title", "meetingName", "meeting_title", "subject"])),
     meeting_date: first(meeting, [
       "date", "startTime", "start_time", "startedAt", "started_at", "createdAt", "created_at", "timestamp",
     ]),
@@ -94,7 +94,11 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  const { data, error } = await db.from("meetings").insert(row).select("id").single();
+  const { data, error } = await db
+    .from("meetings")
+    .insert({ ...row, title: row.title || "Untitled meeting" })
+    .select("id")
+    .single();
   if (error) return res.status(500).json({ error: error.message });
   return res.status(200).json({ id: data.id, status: "stored" });
 }
