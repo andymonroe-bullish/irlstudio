@@ -21,6 +21,7 @@ interface TaskRoadmapPersistedProps {
 }
 
 const PHASE_CONFIG = [
+  { id: "general", name: "General", color: "bg-slate-500" },
   { id: "design", name: "Phase 1 - Design", color: "bg-phase-design" },
   { id: "build", name: "Phase 2 - Build", color: "bg-phase-build" },
   { id: "execute", name: "Phase 3 - Execute", color: "bg-phase-execute" },
@@ -41,7 +42,7 @@ const TaskRoadmapPersisted = ({
   onUpdatePhaseDueDate,
   daysUntilEvent,
 }: TaskRoadmapPersistedProps) => {
-  const [expandedPhases, setExpandedPhases] = useState<string[]>(["design"]);
+  const [expandedPhases, setExpandedPhases] = useState<string[]>(["general", "design"]);
 
   // Convert flat tasks to phases structure
   const phases: Phase[] = useMemo(() => {

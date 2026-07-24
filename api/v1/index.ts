@@ -11,7 +11,7 @@ export default function handler(_req: any, res: any) {
       dates: "ISO 8601 (event_date/event_end_date are timestamps; due_date is YYYY-MM-DD)",
       event_status: "draft is the default; the app treats status as free text",
       task_status: ["not_started", "in_progress", "completed"],
-      task_phase_id: ["design", "build", "execute", "afterglow"],
+      task_phase_id: ["general", "design", "build", "execute", "afterglow"],
       task_priority: ["low", "medium", "high"],
       errors: "Non-2xx responses return { error: string }",
     },
