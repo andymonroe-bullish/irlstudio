@@ -73,11 +73,28 @@ export default async function handler(req: any, res: any) {
   };
 
   const db = getAdminClient();
-  const query = row.external_id
-    ? db.from("meetings").upsert(row, { onConflict: "source,external_id" })
-    : db.from("meetings").insert(row);
-  const { data, error } = await query.select("id").single();
 
+  // Circleback can deliver the same meeting more than once (e.g. notes first,
+  // transcript later). Merge into the existing row, never overwriting data
+  // with nulls from a sparser delivery.
+  if (row.external_id) {
+    const { data: existing } = await db
+      .from("meetings")
+      .select("id")
+      .eq("source", row.source)
+      .eq("external_id", row.external_id)
+      .maybeSingle();
+    if (existing) {
+      const updates = Object.fromEntries(
+        Object.entries(row).filter(([, val]) => val !== null)
+      );
+      const { error } = await db.from("meetings").update(updates).eq("id", existing.id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ id: existing.id, status: "updated" });
+    }
+  }
+
+  const { data, error } = await db.from("meetings").insert(row).select("id").single();
   if (error) return res.status(500).json({ error: error.message });
   return res.status(200).json({ id: data.id, status: "stored" });
 }

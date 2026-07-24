@@ -18,10 +18,11 @@ CREATE TABLE IF NOT EXISTS public.meetings (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Re-delivered webhooks update the existing row instead of duplicating it
+-- Re-delivered webhooks update the existing row instead of duplicating it.
+-- Not a partial index: ON CONFLICT (source, external_id) must be able to
+-- target it, and NULL external_ids never collide in a plain unique index.
 CREATE UNIQUE INDEX IF NOT EXISTS meetings_source_external_id_idx
-  ON public.meetings (source, external_id)
-  WHERE external_id IS NOT NULL;
+  ON public.meetings (source, external_id);
 
 ALTER TABLE public.meetings ENABLE ROW LEVEL SECURITY;
 
