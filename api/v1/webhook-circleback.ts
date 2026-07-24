@@ -96,8 +96,12 @@ const asText = (val: any): string | null => {
 };
 
 export default async function handler(req: any, res: any) {
+  // Some senders validate the URL with a GET/HEAD probe before saving it
+  if (req.method === "GET" || req.method === "HEAD") {
+    return res.status(200).json({ status: "ok", accepts: "POST" });
+  }
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+    res.setHeader("Allow", "POST, GET");
     return res.status(405).json({ error: "Method not allowed. Use: POST" });
   }
 
@@ -105,14 +109,30 @@ export default async function handler(req: any, res: any) {
 
   const sharedSecret = process.env.CIRCLEBACK_WEBHOOK_SECRET;
   const signingSecret = process.env.CIRCLEBACK_SIGNING_SECRET;
-  const providedShared =
+  const providedShared = String(
     req.query?.secret ||
-    req.headers["x-webhook-secret"] ||
-    String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+      req.headers["x-webhook-secret"] ||
+      String(req.headers.authorization || "").replace(/^Bearer\s+/i, "")
+  );
 
-  const sharedOk = !!sharedSecret && !!providedShared && safeEqual(String(providedShared), sharedSecret);
+  // Accept either configured secret as a plain shared secret, or a valid
+  // Standard Webhooks signature.
+  const sharedOk =
+    !!providedShared &&
+    ((!!sharedSecret && safeEqual(providedShared, sharedSecret)) ||
+      (!!signingSecret && safeEqual(providedShared, signingSecret)));
   const signatureOk = !!signingSecret && hasValidSignature(req, rawBody, signingSecret);
   if (!sharedOk && !signatureOk) {
+    // Diagnostic for Vercel runtime logs: which auth headers were present on
+    // the rejected request (signature values are per-message, not secrets).
+    const headerInfo: Record<string, string> = {};
+    for (const [name, value] of Object.entries(req.headers)) {
+      headerInfo[name] = /sig|svix|webhook|circle|auth/i.test(name) ? String(value) : "";
+    }
+    console.log(
+      "circleback webhook rejected:",
+      JSON.stringify({ headers: headerInfo, bodyLength: rawBody.length, bodyPreview: rawBody.slice(0, 300) })
+    );
     return res.status(401).json({ error: "Invalid webhook secret or signature" });
   }
 
