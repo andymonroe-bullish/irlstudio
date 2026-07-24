@@ -4,7 +4,9 @@ import { Check, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import SubTaskAttachments from "./SubTaskAttachments";
 
 interface SubTask {
   id: string;
@@ -24,6 +26,7 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [isAddingSubTask, setIsAddingSubTask] = useState(false);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState("");
+  const { toast } = useToast();
 
   const fetchSubTasks = useCallback(async () => {
     const { data, error } = await supabase
@@ -32,10 +35,16 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
       .eq("task_id", taskId)
       .order("sort_order");
 
-    if (!error && data) {
+    if (error) {
+      toast({
+        title: "Error loading sub-tasks",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data) {
       setSubTasks(data);
     }
-  }, [taskId]);
+  }, [taskId, toast]);
 
   useEffect(() => {
     if (isExpanded) {
@@ -57,7 +66,13 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) {
+      toast({
+        title: "Error saving sub-task",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data) {
       setSubTasks((prev) => [...prev, data]);
       setNewSubTaskTitle("");
       setIsAddingSubTask(false);
@@ -70,7 +85,13 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
       .update({ completed: !subTask.completed })
       .eq("id", subTask.id);
 
-    if (!error) {
+    if (error) {
+      toast({
+        title: "Error updating sub-task",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
       setSubTasks((prev) =>
         prev.map((s) =>
           s.id === subTask.id ? { ...s, completed: !s.completed } : s
@@ -85,7 +106,13 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
       .delete()
       .eq("id", subTaskId);
 
-    if (!error) {
+    if (error) {
+      toast({
+        title: "Error deleting sub-task",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
       setSubTasks((prev) => prev.filter((s) => s.id !== subTaskId));
     }
   };
@@ -157,6 +184,7 @@ const SubTaskList = ({ taskId, isExpanded, onToggle }: SubTaskListProps) => {
                   >
                     {subTask.title}
                   </span>
+                  <SubTaskAttachments subTaskId={subTask.id} />
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

@@ -14,6 +14,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SubTaskList from "./SubTaskList";
 import TaskDetailModal from "./TaskDetailModal";
 import { Task as TaskData } from "@/hooks/useEvents";
@@ -66,6 +76,7 @@ const TaskItem = ({
   const StatusIcon = status.icon;
   const [subTasksExpanded, setSubTasksExpanded] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -380,7 +391,7 @@ const TaskItem = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(task.id);
+                  setConfirmDeleteOpen(true);
                 }}
                 className="hidden sm:block opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
               >
@@ -429,6 +440,28 @@ const TaskItem = ({
           </div>
         )}
       </Draggable>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{task.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the task along with its sub-tasks,
+              attachments, links, and comments. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(task.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Task Detail Modal */}
       <TaskDetailModal

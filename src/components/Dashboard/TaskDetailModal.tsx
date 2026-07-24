@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   X,
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaskDetails } from "@/hooks/useTaskDetails";
+import SubTaskAttachments from "./SubTaskAttachments";
 import { Task } from "@/hooks/useEvents";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,14 @@ const TaskDetailModal = ({ task, open, onClose, onUpdateTask }: TaskDetailModalP
     deleteComment,
     uploadFile,
     deleteFile,
+    refetch,
   } = useTaskDetails(task.id);
+
+  // The modal stays mounted while the task list is on screen, so data loaded
+  // at mount goes stale; refresh it every time the modal is opened.
+  useEffect(() => {
+    if (open) refetch();
+  }, [open, refetch]);
 
   const [newSubTask, setNewSubTask] = useState("");
   const [newLinkTitle, setNewLinkTitle] = useState("");
@@ -196,6 +204,7 @@ const TaskDetailModal = ({ task, open, onClose, onUpdateTask }: TaskDetailModalP
                     >
                       {subTask.title}
                     </span>
+                    <SubTaskAttachments subTaskId={subTask.id} />
                     <button
                       onClick={() => deleteSubTask(subTask.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"

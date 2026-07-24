@@ -391,6 +391,44 @@ export type Database = {
           },
         ]
       }
+      sub_task_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          sub_task_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          sub_task_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          sub_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_task_files_sub_task_id_fkey"
+            columns: ["sub_task_id"]
+            isOneToOne: false
+            referencedRelation: "sub_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           content: string
