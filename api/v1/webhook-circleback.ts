@@ -46,13 +46,16 @@ function hasValidSignature(req: any, rawBody: string, signingSecret: string): bo
 
   const signedContent = `${id}.${timestamp}.${rawBody}`;
   const stripped = signingSecret.replace(/^whsec_/, "");
-  // The secret portion should be base64, but tolerate senders that key the
-  // HMAC with the raw string instead.
+  // The spec says the secret portion is base64, but tolerate senders that
+  // key the HMAC with hex-decoded bytes or the raw string instead.
   const candidateKeys = [
     Buffer.from(stripped, "base64"),
     Buffer.from(stripped, "utf8"),
     Buffer.from(signingSecret, "utf8"),
   ];
+  if (/^[0-9a-f]+$/i.test(stripped) && stripped.length % 2 === 0) {
+    candidateKeys.push(Buffer.from(stripped, "hex"));
+  }
   const provided = String(sigHeader)
     .split(" ")
     .map((part) => part.split(",").pop() || "")
