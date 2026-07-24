@@ -165,10 +165,6 @@ export default async function handler(req: any, res: any) {
       "circleback webhook rejected:",
       JSON.stringify({ headers: headerInfo, bodyLength: rawBody.length, bodyPreview: rawBody.slice(0, 300) })
     );
-    // Temporary: persist rejection details for diagnosis (CLI log lines truncate)
-    await getAdminClient()
-      .from("webhook_debug")
-      .insert({ headers: headerInfo, body: rawBody });
     return res.status(401).json({ error: "Invalid webhook secret or signature" });
   }
 
@@ -192,11 +188,18 @@ export default async function handler(req: any, res: any) {
     ]),
     attendees: first(meeting, ["attendees", "participants", "members", "invitees"]),
     summary: asText(first(meeting, ["summary", "overview", "aiSummary", "description", "recap"])),
-    notes: first(meeting, ["notes", "sections", "outline", "keyPoints", "key_points"]),
+    notes: first(meeting, ["notes", "sections", "outline", "keyPoints", "key_points"]) as any,
     action_items: first(meeting, ["actionItems", "action_items", "tasks", "todos", "followUps", "follow_ups"]),
     transcript: asText(first(meeting, ["transcript", "transcription", "transcript_text", "transcriptText", "transcriptSegments", "utterances"])),
     raw_payload: body,
   };
+
+  // Circleback sends its meeting summary as a markdown string under "notes"
+  // with no separate summary field — promote it so list views aren't empty.
+  if (!row.summary && typeof row.notes === "string") {
+    row.summary = row.notes;
+    row.notes = null;
+  }
 
   const db = getAdminClient();
 
