@@ -8,6 +8,7 @@ import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
 import PromotionTasksPersisted from "./PromotionTasksPersisted";
 import BudgetManagerPersisted from "./BudgetManagerPersisted";
+import MockBudgetsPersisted from "./MockBudgetsPersisted";
 import ProjectionsManagerPersisted from "./ProjectionsManagerPersisted";
 import ItineraryManager from "./ItineraryManager";
 import NotesManager from "./NotesManager";
@@ -20,6 +21,7 @@ interface EventDashboardPersistedProps {
 
 type DashboardView = "tasks" | "budget" | "projections" | "itinerary" | "notes" | "files";
 type TaskSection = "design" | "promotion";
+type BudgetSection = "live" | "mock";
 
 const VALID_VIEWS: DashboardView[] = ["tasks", "budget", "projections", "itinerary", "notes", "files"];
 
@@ -28,6 +30,7 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
   const tabParam = searchParams.get("tab") as DashboardView | null;
   const activeView: DashboardView = tabParam && VALID_VIEWS.includes(tabParam) ? tabParam : "tasks";
   const taskSection: TaskSection = searchParams.get("section") === "promotion" ? "promotion" : "design";
+  const budgetSection: BudgetSection = searchParams.get("section") === "mock" ? "mock" : "live";
 
   const setActiveView = (view: DashboardView) => {
     setSearchParams({ tab: view }, { replace: true });
@@ -35,6 +38,10 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
 
   const setTaskSection = (section: TaskSection) => {
     setSearchParams({ tab: "tasks", section }, { replace: true });
+  };
+
+  const setBudgetSection = (section: BudgetSection) => {
+    setSearchParams({ tab: "budget", section }, { replace: true });
   };
 
   const eventData = useEventData(event.id);
@@ -126,6 +133,32 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
         </div>
       )}
 
+      {/* Budget sub-toggle: Live Budget vs Mock Budgets */}
+      {activeView === "budget" && (
+        <div className="flex items-center justify-center mb-6">
+          <div className="inline-flex items-center bg-muted/50 rounded-full p-1 border border-border">
+            {([
+              { id: "live" as BudgetSection, label: "Live Budget" },
+              { id: "mock" as BudgetSection, label: "Mock Budgets" },
+            ]).map((section) => (
+              <button
+                key={section.id}
+                onClick={() => setBudgetSection(section.id)}
+                className={`
+                  px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap
+                  ${budgetSection === section.id
+                    ? "bg-card text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 gap-6">
         {activeView === "tasks" && taskSection === "design" && (
@@ -157,7 +190,14 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
             onReorderTasks={eventData.reorderTasks}
           />
         )}
-        {activeView === "budget" && (
+        {activeView === "budget" && budgetSection === "mock" && (
+          <MockBudgetsPersisted
+            eventId={event.id}
+            liveItems={eventData.budgetItems}
+            liveRevenueItems={eventData.revenueItems}
+          />
+        )}
+        {activeView === "budget" && budgetSection === "live" && (
           <BudgetManagerPersisted
             totalBudget={estimatedBudgetTotal}
             items={eventData.budgetItems}
