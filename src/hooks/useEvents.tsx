@@ -12,6 +12,7 @@ export interface Event {
   name: string | null;
   slug: string | null;
   total_budget: number;
+  expected_guests: number | null;
   event_date: string;
   event_end_date: string | null;
   created_at: string;

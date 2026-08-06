@@ -16,6 +16,7 @@ import {
   ScenarioRevenueItem,
 } from "@/hooks/useBudgetScenarios";
 import { BUDGET_CATEGORIES } from "./types";
+import PerAttendeeBudget from "./PerAttendeeBudget";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +32,8 @@ interface MockBudgetsPersistedProps {
   eventId: string;
   liveItems: BudgetItem[];
   liveRevenueItems: RevenueItem[];
+  attendeeCount: number | null;
+  onUpdateAttendees: (count: number) => Promise<void>;
 }
 
 type LocalItemEdits = Record<string, { name?: string; estimated_cost?: string }>;
@@ -44,7 +47,13 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value);
 
-const MockBudgetsPersisted = ({ eventId, liveItems, liveRevenueItems }: MockBudgetsPersistedProps) => {
+const MockBudgetsPersisted = ({
+  eventId,
+  liveItems,
+  liveRevenueItems,
+  attendeeCount,
+  onUpdateAttendees,
+}: MockBudgetsPersistedProps) => {
   const {
     scenarios, scenarioItems, scenarioRevenues, loading,
     createScenario, renameScenario, deleteScenario, duplicateScenario,
@@ -392,6 +401,15 @@ const MockBudgetsPersisted = ({ eventId, liveItems, liveRevenueItems }: MockBudg
               )}
             </div>
           </div>
+
+          {/* Per-Attendee Budget */}
+          <PerAttendeeBudget
+            label="Per-Attendee Budget"
+            totalAmount={totalCost}
+            totalLabel="projected cost"
+            attendeeCount={attendeeCount}
+            onUpdateAttendees={onUpdateAttendees}
+          />
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

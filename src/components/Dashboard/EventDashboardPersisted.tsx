@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { ListTodo, DollarSign, TrendingUp, Calendar, StickyNote, Paperclip } from "lucide-react";
 import { Event, useEventData } from "@/hooks/useEvents";
 import { useEventMembers } from "@/hooks/useEventMembers";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import EventHeaderPersisted from "./EventHeaderPersisted";
 import TaskRoadmapPersisted from "./TaskRoadmapPersisted";
 import PromotionTasksPersisted from "./PromotionTasksPersisted";
@@ -46,6 +48,29 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
 
   const eventData = useEventData(event.id);
   const { members } = useEventMembers(event.id);
+  const { toast } = useToast();
+
+  // Attendee count is event-level, shared by the live and mock budget views
+  const updateAttendeeCount = async (count: number) => {
+    const updates: Partial<Event> = { expected_guests: count > 0 ? count : null };
+    const { data, error } = await supabase
+      .from("events")
+      .update(updates)
+      .eq("id", event.id)
+      .select();
+
+    if (error || !data?.length) {
+      // RLS denials surface as an empty result rather than an error
+      toast({
+        title: "Error updating attendee count",
+        description: error?.message || "You don't have permission to change this event.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onEventUpdated?.(updates);
+  };
 
   const tabs = [
     { id: "tasks" as DashboardView, label: "Tasks", icon: ListTodo },
@@ -195,11 +220,15 @@ const EventDashboardPersisted = ({ event, onEventUpdated }: EventDashboardPersis
             eventId={event.id}
             liveItems={eventData.budgetItems}
             liveRevenueItems={eventData.revenueItems}
+            attendeeCount={event.expected_guests ?? null}
+            onUpdateAttendees={updateAttendeeCount}
           />
         )}
         {activeView === "budget" && budgetSection === "live" && (
           <BudgetManagerPersisted
             totalBudget={estimatedBudgetTotal}
+            attendeeCount={event.expected_guests ?? null}
+            onUpdateAttendees={updateAttendeeCount}
             items={eventData.budgetItems}
             lineItems={eventData.budgetLineItems}
             revenueItems={eventData.revenueItems}

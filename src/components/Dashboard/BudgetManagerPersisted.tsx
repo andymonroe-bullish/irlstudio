@@ -4,6 +4,7 @@ import { Plus, DollarSign, Trash2, TrendingUp, ChevronDown, ChevronRight, Corner
 import { BudgetItem, BudgetLineItem, RevenueItem } from "@/hooks/useEvents";
 import { BUDGET_CATEGORIES } from "./types";
 import BudgetReceipts from "./BudgetReceipts";
+import PerAttendeeBudget from "./PerAttendeeBudget";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +18,8 @@ import { cn } from "@/lib/utils";
 
 interface BudgetManagerPersistedProps {
   totalBudget: number;
+  attendeeCount: number | null;
+  onUpdateAttendees: (count: number) => Promise<void>;
   items: BudgetItem[];
   lineItems: BudgetLineItem[];
   revenueItems: RevenueItem[];
@@ -38,6 +41,8 @@ type LocalLineEdits = Record<string, { name?: string; amount?: string }>;
 
 const BudgetManagerPersisted = ({
   totalBudget,
+  attendeeCount,
+  onUpdateAttendees,
   items,
   lineItems,
   revenueItems,
@@ -309,6 +314,15 @@ const BudgetManagerPersisted = ({
       transition={{ delay: 0.2 }}
       className="space-y-4"
     >
+      {/* Per-Attendee Budget */}
+      <PerAttendeeBudget
+        label="Per-Attendee Budget"
+        totalAmount={totalBudget}
+        totalLabel="budget"
+        attendeeCount={attendeeCount}
+        onUpdateAttendees={onUpdateAttendees}
+      />
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-card rounded-xl border border-border p-4">
