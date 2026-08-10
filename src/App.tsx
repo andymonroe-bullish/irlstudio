@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemePreferenceSync } from "@/hooks/useThemePreference";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventsList from "./pages/EventsList";
 import CreateEvent from "./pages/CreateEvent";
@@ -24,6 +25,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <ThemePreferenceSync />
         <Toaster />
         <Sonner />
         <BrowserRouter>

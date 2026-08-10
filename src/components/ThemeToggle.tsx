@@ -1,9 +1,9 @@
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useThemePreference } from "@/hooks/useThemePreference";
 import { Button } from "@/components/ui/button";
 
 const ThemeToggle = () => {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, saveTheme } = useThemePreference();
   const isDark = resolvedTheme === "dark";
 
   return (
@@ -11,7 +11,7 @@ const ThemeToggle = () => {
       variant="outline"
       size="sm"
       className="gap-2"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={() => saveTheme(isDark ? "light" : "dark")}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
