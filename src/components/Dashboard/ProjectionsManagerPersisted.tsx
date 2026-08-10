@@ -208,7 +208,16 @@ const ProjectionsManagerPersisted = ({
 
         {/* Stats Sidebar */}
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6">
-          {/* Projected Profit */}
+          {/* Projected Revenue (Gross) */}
+          <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 shadow-card">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">Projected Revenue</p>
+            <p className="text-xl sm:text-3xl font-bold text-foreground">
+              {formatCurrency(totalRevenue)}
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Gross, before budget</p>
+          </div>
+
+          {/* Projected Profit (Net) */}
           <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 shadow-card">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1">Projected Profit</p>
             <p
@@ -218,11 +227,11 @@ const ProjectionsManagerPersisted = ({
             >
               {formatCurrency(projectedProfit)}
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Revenue - Budget</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Net, Revenue - Budget</p>
           </div>
 
           {/* Projected ROI */}
-          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 sm:p-6 text-primary-foreground">
+          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 sm:p-6 text-primary-foreground col-span-2 lg:col-span-1">
             <p className="text-xs sm:text-sm opacity-80 mb-1">Projected ROI</p>
             <div className="flex items-center gap-2">
               <p className="text-2xl sm:text-4xl font-bold">{roi.toFixed(1)}x</p>

@@ -179,7 +179,16 @@ const ProjectionsManager = ({ totalBudget }: ProjectionsManagerProps) => {
 
         {/* Stats Sidebar */}
         <div className="space-y-6">
-          {/* Projected Profit */}
+          {/* Projected Revenue (Gross) */}
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+            <p className="text-sm text-muted-foreground mb-1">Projected Revenue</p>
+            <p className="text-3xl font-bold text-foreground">
+              {formatCurrency(totalRevenue)}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">Gross, before budget</p>
+          </div>
+
+          {/* Projected Profit (Net) */}
           <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
             <p className="text-sm text-muted-foreground mb-1">Projected Profit</p>
             <p
@@ -189,7 +198,7 @@ const ProjectionsManager = ({ totalBudget }: ProjectionsManagerProps) => {
             >
               {formatCurrency(projectedProfit)}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">Revenue - Budget</p>
+            <p className="text-sm text-muted-foreground mt-1">Net, Revenue - Budget</p>
           </div>
 
           {/* Projected ROI */}
