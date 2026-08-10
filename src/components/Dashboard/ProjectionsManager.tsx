@@ -62,10 +62,6 @@ const ProjectionsManager = ({ totalBudget }: ProjectionsManagerProps) => {
     }).format(amount);
   };
 
-  const maxBarValue = Math.max(totalBudget, totalRevenue);
-  const budgetHeight = maxBarValue > 0 ? (totalBudget / maxBarValue) * 100 : 0;
-  const revenueHeight = maxBarValue > 0 ? (totalRevenue / maxBarValue) * 100 : 0;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -209,27 +205,6 @@ const ProjectionsManager = ({ totalBudget }: ProjectionsManagerProps) => {
               <TrendingUp className="w-6 h-6 opacity-60" />
             </div>
             <p className="text-sm opacity-80 mt-1">Revenue Multiplier</p>
-          </div>
-
-          {/* Budget vs Revenue Chart */}
-          <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-            <h4 className="font-semibold text-foreground mb-4">Budget vs Revenue</h4>
-            <div className="flex items-end justify-center gap-8 h-32">
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="w-16 bg-destructive/80 rounded-t-lg transition-all duration-300"
-                  style={{ height: `${budgetHeight}%`, minHeight: "8px" }}
-                />
-                <span className="text-xs text-muted-foreground">Budget (Cost)</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="w-16 bg-primary rounded-t-lg transition-all duration-300"
-                  style={{ height: `${revenueHeight}%`, minHeight: "8px" }}
-                />
-                <span className="text-xs text-muted-foreground">Proj. Revenue</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

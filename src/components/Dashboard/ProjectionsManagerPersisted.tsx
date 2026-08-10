@@ -34,10 +34,6 @@ const ProjectionsManagerPersisted = ({
     }).format(amount);
   };
 
-  const maxBarValue = Math.max(totalBudget, totalRevenue);
-  const budgetHeight = maxBarValue > 0 ? (totalBudget / maxBarValue) * 100 : 0;
-  const revenueHeight = maxBarValue > 0 ? (totalRevenue / maxBarValue) * 100 : 0;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -238,27 +234,6 @@ const ProjectionsManagerPersisted = ({
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
             </div>
             <p className="text-xs sm:text-sm opacity-80 mt-1">Revenue Multiplier</p>
-          </div>
-
-          {/* Budget vs Revenue Chart */}
-          <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 shadow-card col-span-2 lg:col-span-1">
-            <h4 className="font-semibold text-foreground mb-4 text-sm sm:text-base">Budget vs Revenue</h4>
-            <div className="flex items-end justify-center gap-6 sm:gap-8 h-24 sm:h-32">
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="w-12 sm:w-16 bg-destructive/80 rounded-t-lg transition-all duration-300"
-                  style={{ height: `${budgetHeight}%`, minHeight: "8px" }}
-                />
-                <span className="text-xs text-muted-foreground text-center">Budget</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="w-12 sm:w-16 bg-primary rounded-t-lg transition-all duration-300"
-                  style={{ height: `${revenueHeight}%`, minHeight: "8px" }}
-                />
-                <span className="text-xs text-muted-foreground text-center">Revenue</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
