@@ -51,12 +51,12 @@ const statusConfig = {
   in_progress: {
     label: "In Progress",
     icon: Clock,
-    className: "bg-yellow-100 text-yellow-700",
+    className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400",
   },
   completed: {
     label: "Completed",
     icon: Check,
-    className: "bg-green-100 text-green-700",
+    className: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400",
   },
 };
 

@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InviteCollaboratorDialog } from "@/components/InviteCollaboratorDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 import { PendingInvitationsBanner } from "@/components/PendingInvitationsBanner";
 import { format } from "date-fns";
 import {
@@ -207,6 +208,7 @@ const EventsList = () => {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <ThemeToggle />
             <InviteCollaboratorDialog events={events} />
             <Button
               onClick={() => navigate("/create-event")}

@@ -82,7 +82,7 @@ const BudgetItemRow = ({ item, index, onUpdate, onDelete }: BudgetItemRowProps) 
                 <button
                   className={cn(
                     "px-3 py-1 rounded-lg text-xs font-semibold uppercase",
-                    category?.color || "bg-gray-100 text-gray-700"
+                    category?.color || "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400"
                   )}
                 >
                   {category?.name || item.category}
@@ -185,7 +185,7 @@ const BudgetItemRow = ({ item, index, onUpdate, onDelete }: BudgetItemRowProps) 
                   <div className="flex items-center gap-2 mt-1">
                     <span className={cn(
                       "px-2 py-0.5 rounded text-xs font-semibold uppercase",
-                      category?.color || "bg-gray-100 text-gray-700"
+                      category?.color || "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400"
                     )}>
                       {category?.name || item.category}
                     </span>
@@ -252,7 +252,7 @@ const BudgetItemRow = ({ item, index, onUpdate, onDelete }: BudgetItemRowProps) 
                       <button
                         className={cn(
                           "px-3 py-2 rounded-lg text-xs font-semibold uppercase w-full text-left",
-                          category?.color || "bg-gray-100 text-gray-700"
+                          category?.color || "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400"
                         )}
                       >
                         {category?.name || item.category}

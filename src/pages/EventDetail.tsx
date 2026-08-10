@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Event } from "@/hooks/useEvents";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle";
 import EventDashboardPersisted from "@/components/Dashboard/EventDashboardPersisted";
 
 const EventDetail = () => {
@@ -52,7 +53,7 @@ const EventDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -63,6 +64,7 @@ const EventDetail = () => {
             <span className="hidden sm:inline">Back to Events</span>
             <span className="sm:hidden">Back</span>
           </Button>
+          <ThemeToggle />
         </div>
         
         <EventDashboardPersisted

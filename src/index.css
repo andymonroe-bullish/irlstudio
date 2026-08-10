@@ -68,6 +68,60 @@
     --sidebar-border: 210 25% 92%;
     --sidebar-ring: 199 89% 48%;
   }
+
+  .dark {
+    /* Core palette - Dark blue focused */
+    --background: 220 25% 8%;
+    --foreground: 210 30% 96%;
+
+    --card: 220 22% 11%;
+    --card-foreground: 210 30% 96%;
+
+    --popover: 220 22% 11%;
+    --popover-foreground: 210 30% 96%;
+
+    /* Primary - Vibrant Sky Blue (slightly brighter for dark bg) */
+    --primary: 199 89% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Deep Blue Gray */
+    --secondary: 220 18% 16%;
+    --secondary-foreground: 210 25% 90%;
+
+    --muted: 220 16% 16%;
+    --muted-foreground: 215 12% 64%;
+
+    /* Accent - Deep Blue */
+    --accent: 199 60% 16%;
+    --accent-foreground: 199 89% 68%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 22%;
+    --ring: 199 89% 52%;
+
+    /* Gradient backgrounds */
+    --gradient-hero: linear-gradient(135deg, hsl(330 30% 12%) 0%, hsl(45 25% 11%) 50%, hsl(199 40% 12%) 100%);
+    --gradient-card-hover: linear-gradient(180deg, hsl(199 50% 14%) 0%, hsl(220 22% 11%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.35);
+    --shadow-card-hover: 0 8px 24px hsl(199 89% 48% / 0.2);
+
+    --sidebar-background: 220 22% 10%;
+    --sidebar-foreground: 210 25% 88%;
+    --sidebar-primary: 199 89% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 199 50% 15%;
+    --sidebar-accent-foreground: 199 89% 68%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 199 89% 52%;
+  }
 }
 
 @layer base {

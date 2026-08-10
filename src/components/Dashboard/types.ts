@@ -32,15 +32,15 @@ export interface BudgetItem {
 }
 
 export const BUDGET_CATEGORIES: BudgetCategory[] = [
-  { id: "catering", name: "CATERING", color: "bg-green-100 text-green-700" },
-  { id: "product", name: "PRODUCT", color: "bg-blue-100 text-blue-700" },
-  { id: "marketing", name: "MARKETING", color: "bg-pink-100 text-pink-700" },
-  { id: "legal", name: "LEGAL", color: "bg-purple-100 text-purple-700" },
-  { id: "other", name: "OTHER", color: "bg-gray-100 text-gray-700" },
-  { id: "operations", name: "OPERATIONS", color: "bg-red-100 text-red-700" },
-  { id: "venue", name: "VENUE", color: "bg-yellow-100 text-yellow-700" },
-  { id: "media", name: "MEDIA", color: "bg-cyan-100 text-cyan-700" },
-  { id: "travel", name: "TRAVEL", color: "bg-orange-100 text-orange-700" },
+  { id: "catering", name: "CATERING", color: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" },
+  { id: "product", name: "PRODUCT", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" },
+  { id: "marketing", name: "MARKETING", color: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400" },
+  { id: "legal", name: "LEGAL", color: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400" },
+  { id: "other", name: "OTHER", color: "bg-gray-100 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400" },
+  { id: "operations", name: "OPERATIONS", color: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" },
+  { id: "venue", name: "VENUE", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400" },
+  { id: "media", name: "MEDIA", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400" },
+  { id: "travel", name: "TRAVEL", color: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400" },
 ];
 
 export const getInitialPhases = (): Phase[] => [
